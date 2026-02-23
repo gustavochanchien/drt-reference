@@ -15,7 +15,7 @@ body { background: var(--paper); color: var(--ink); -webkit-font-smoothing: anti
 .d3 { animation-delay: .15s; }
 .d4 { animation-delay: .2s; }
 
-.hdr { padding: 16px 20px 0; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--paper); z-index: 100; }
+.hdr { padding: 16px 20px 0; display: flex; align-items: center; justify-content: space-between; }
 .hdr-brand { display: flex; align-items: baseline; gap: 6px; }
 .hdr-brand h1 { font-family: var(--font-serif); font-size: 14px; font-weight: 700; color: var(--ink); }
 .hdr-brand .zh { font-family: var(--font-zh); color: var(--accent); font-size: 13px; font-weight: 600; }

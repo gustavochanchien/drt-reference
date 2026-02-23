@@ -1055,7 +1055,7 @@
         var isDetail = s.view === "detail" || s.view === "settings";
 
         var html = '<div class="app" id="app-container" style="' + this.getCSSVars() + '">';
-
+        html += '<div style="position: sticky; top: 0; background: var(--paper); z-index: 100;">';
         html += '<div class="hdr">';
         if (isDetail) {
           var prevWord = s.navStack.length > 0 ? s.navStack[s.navStack.length - 1] : null;
@@ -1068,9 +1068,11 @@
         }
         html += '</div>';
 
-        if (s.view === "home" || s.view === "favorites" || s.view === "search") {
+        if (s.view === "home" || s.view === "favorites" || s.view === "search" || s.view === "detail") {
           html += '<div class="sw"><div class="sb" id="search-ref"><span class="si">' + I.Search + '</span><input id="search-input" placeholder="Search English, 中文, or Pinyin…" value="' + escapeHTML(s.query) + '" oninput="app.doSearch(this.value)" onfocus="app.setFocused(true)" onkeydown="if(event.key === \'Enter\') { event.preventDefault(); app.showSearchResults(); }" autocomplete="off" /><div id="clear-btn-container" style="display:flex;align-items:center;">' + (s.query ? '<button class="sc" onclick="app.clearSearch()">' + I.X + '</button>' : "") + '</div></div><div id="dropdown-container">' + this.buildDropdownHTML() + '</div></div>';
         }
+
+        html += '</div>';
 
         if (s.view === "home") {
           html += '<div style="padding-bottom:20px">';
