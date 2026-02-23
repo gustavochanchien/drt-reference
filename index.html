@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dr. T English-中文 Reference</title>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    // ─── Themes ────────────────────────────────────────────────────────────
+    const THEMES = {
+      light: { id: "light", name: "Light", emoji: "☀️", ink: "#1a1a1a", inkLight: "#4a4a4a", inkMuted: "#8a8a8a", paper: "#faf8f5", paperWarm: "#f5f0e8", paperDeep: "#ece5d8", accent: "#c0392b", accentGlow: "rgba(192,57,43,0.08)", gold: "#b8860b", goldSoft: "#f0e6c8", border: "#e0d8cc", cardBg: "#ffffff", tabBg: "rgba(250,248,245,0.92)", wodGrad: "linear-gradient(135deg,#fefcf9 0%,#f8f0e3 100%)", synBg: "#eef5ee", synColor: "#2d6a2e", synBorder: "#c8e0c8", antBg: "#fef0f0", antColor: "#a83232", antBorder: "#f0d0d0" },
+      dark: { id: "dark", name: "Dark", emoji: "🌙", ink: "#e8e4df", inkLight: "#b8b4ae", inkMuted: "#7a7670", paper: "#1a1815", paperWarm: "#252220", paperDeep: "#1f1d1a", accent: "#e8654a", accentGlow: "rgba(232,101,74,0.12)", gold: "#d4a843", goldSoft: "#3a3425", border: "#3a3632", cardBg: "#252220", tabBg: "rgba(26,24,21,0.94)", wodGrad: "linear-gradient(135deg,#2a2620 0%,#302a22 100%)", synBg: "#1e2a1e", synColor: "#7cc47c", synBorder: "#2a3d2a", antBg: "#2e1e1e", antColor: "#e88080", antBorder: "#3d2a2a" },
+      cherry: { id: "cherry", name: "Cherry Blossom", emoji: "🌸", ink: "#4a2040", inkLight: "#6d4060", inkMuted: "#a07090", paper: "#fef5f8", paperWarm: "#fce8f0", paperDeep: "#f8d8e4", accent: "#d4467a", accentGlow: "rgba(212,70,122,0.1)", gold: "#c07048", goldSoft: "#f8e0d0", border: "#f0c8d8", cardBg: "#ffffff", tabBg: "rgba(254,245,248,0.92)", wodGrad: "linear-gradient(135deg,#fff5f8 0%,#fce0ec 100%)", synBg: "#f0f5ee", synColor: "#507040", synBorder: "#d0e0c8", antBg: "#fef0f0", antColor: "#b04050", antBorder: "#f0d0d0" },
+      blue: { id: "blue", name: "Ocean Blue", emoji: "🌊", ink: "#1a2a3a", inkLight: "#3a5068", inkMuted: "#708898", paper: "#f0f5fa", paperWarm: "#e0eaf4", paperDeep: "#d0dde8", accent: "#2070b8", accentGlow: "rgba(32,112,184,0.1)", gold: "#b08830", goldSoft: "#e8dcc0", border: "#c0d0e0", cardBg: "#ffffff", tabBg: "rgba(240,245,250,0.92)", wodGrad: "linear-gradient(135deg,#f4f8fc 0%,#dce8f4 100%)", synBg: "#e8f4ee", synColor: "#2a6848", synBorder: "#b8dcc8", antBg: "#fce8e8", antColor: "#a83232", antBorder: "#f0d0d0" }
+    };
+
+    // ─── Dictionary State ──────────────────────────────────────────────────
+    let DICTIONARY = [];
+    let IDIOM_INDEX = [];
+    const FONT_SIZES = [{label:"S",value:14},{label:"M",value:16},{label:"L",value:18},{label:"XL",value:21}];
+
+    // ─── Icons ─────────────────────────────────────────────────────────────
+    const I = {
+      Search: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+      Speaker: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
+      Star: function(f) { return `<svg width="18" height="18" viewBox="0 0 24 24" fill="${f ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`; },
+      Copy: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+      Wiki: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
+      Back: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`,
+      Home: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+      Heart: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+      Gear: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`,
+      Book: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`,
+      X: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+      Sparkle: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0L14.59 8.41L23 12L14.59 15.59L12 24L9.41 15.59L1 12L9.41 8.41Z"/></svg>`,
+      Trash: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
+      Check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+      Clock: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+      Quote: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" opacity="0.5"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>`,
+      SpeakerMini: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`,
+    };
+
+    // ─── Utility ───────────────────────────────────────────────────────────
+    function escapeHTML(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    
+    function getWordOfDay() {
+      if (!DICTIONARY.length) return null;
+      const t = new Date(), s = t.getFullYear()*10000 + (t.getMonth()+1)*100 + t.getDate();
+      return DICTIONARY[s % DICTIONARY.length];
+    }
+    
+    function norm(s) {
+      if (!s) return "";
+      return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+    }
+
+    // Helper: safely escape text for use inside single-quoted JS strings in onclick attributes
+    function safeQuote(text) {
+      if (!text) return "";
+      return text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // Helper: inline mini speaker button. Detects language automatically if lang is "auto"
+    function spkBtn(text, lang) {
+      if (!text) return "";
+      var safe = safeQuote(text);
+      // Auto-detect: if text contains CJK characters, use zh
+      if (lang === "auto") {
+        lang = /[\u4e00-\u9fff\u3400-\u4dbf]/.test(text) ? "zh" : "en";
+      }
+      return ' <button class="spk" onclick="event.stopPropagation();app.speak(\'' + safe + '\',\'' + lang + '\',this)" title="Listen">' + I.SpeakerMini + '</button>';
+    }
+
+    // Fully optimized search function — handles both zh-en and en-zh entries
+    function searchDB(q) {
+      if (!q || !q.trim() || !DICTIONARY.length) return [];
+      const n = norm(q);
+      if (!n) return [];
+
+      let results = [];
+      let matchCount = 0;
+      
+      for (let i = 0; i < DICTIONARY.length; i++) {
+        const w = DICTIONARY[i];
+        let s = 0;
+        
+        // Use pre-computed properties for massive speed boost
+        if (w._enLow === n || w.chinese_traditional === n || w._pyNorm === n || w._pyJoined === n || w.chinese_simplified === n) {
+            s = 100;
+        } else if (w._enLow.startsWith(n) || (w._pyJoined && w._pyJoined.startsWith(n))) {
+            s = 80;
+        } else if (w.chinese_traditional && w.chinese_traditional.includes(n) || (w.chinese_simplified && w.chinese_simplified.includes(n))) {
+            s = 70;
+        } else if (n.length > 2 && (w._defsNorm.includes(n) || (w._zhTransNorm && w._zhTransNorm.includes(n)))) {
+            // Search across both English definitions and Chinese translations
+            s = 60; 
+        }
+
+        if (s > 0) {
+            // Build subtitle based on entry type
+            let sub;
+            if (w._type === "en-zh") {
+                sub = w.zh_trans.length > 0 ? w.zh_trans[0] : w.english_word;
+                if (w.phonetic_en) sub = w.phonetic_en + ' · ' + sub;
+            } else {
+                sub = (w.chinese_traditional || "") + ' · ' + (w.pinyin || "");
+            }
+            results.push({ type: "word", data: w, score: s, label: w.english_word, sub: sub });
+            matchCount++;
+        }
+
+        // Safety valve
+        if (matchCount > 500) break;
+      }
+
+      return results.sort((a, b) => b.score - a.score).slice(0, 50);
+    }
+
+    // ─── App State & Logic ─────────────────────────────────────────────────
+    const app = {
+      state: {
+        view: "home",
+        query: "",
+        results: [],
+        sel: null,
+        favs: [],
+        wiki: false,
+        toast: null,
+        themeId: "light",
+        fontSize: 16,
+        history: [],
+        focused: false,
+        showHistorySettings: false,
+        isLoaded: false,
+        detailTab: "cn"
+      },
+      toastTimeout: null,
+      searchTimeout: null,
+
+      async init() {
+        const root = document.getElementById('root');
+        
+        root.innerHTML = `
+          <div style="display:flex; height:100vh; align-items:center; justify-content:center; background:#faf8f5; color:#1a1a1a; font-family:sans-serif; flex-direction:column; gap:12px;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: pulse 1s infinite;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <div id="loading-text" style="font-weight:600;">Loading Dictionary... 0%</div>
+          </div>
+          <style>@keyframes pulse { 0% { opacity: 0.5; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); } 100% { opacity: 0.5; transform: scale(0.95); } }</style>
+        `;
+
+        try {
+          // ── Load the unified JSONL dictionary ──
+          const response = await fetch('dictionary.jsonl');
+          if (!response.ok) throw new Error("Could not find dictionary.jsonl");
+          const text = await response.text();
+          
+          const lines = text.split('\n');
+
+          await new Promise((resolve) => {
+            let i = 0;
+            const chunkSize = 2000; 
+            
+            const processChunk = () => {
+              const end = Math.min(i + chunkSize, lines.length);
+              
+              for (; i < end; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                let entry;
+                try {
+                  entry = JSON.parse(line);
+                } catch (e) {
+                  continue; // Skip malformed lines
+                }
+
+                if (entry.type === "zh-en") {
+                  // ── CC-CEDICT entry (Chinese → English) ──
+                  const en_word = entry.en || entry.zh_trad;
+                  const en_norm = norm(en_word);
+                  const defs_norm = norm((entry.defs || []).join(" "));
+                  const py_no_tones = (entry.pinyin || "").replace(/\d/g, "");
+                  const py_norm = norm(py_no_tones);
+                  const py_joined = py_norm.replace(/\s/g, "");
+
+                  DICTIONARY.push({
+                    id: entry.id,
+                    _type: "zh-en",
+                    english_word: en_word,
+                    chinese_traditional: entry.zh_trad || "",
+                    chinese_simplified: entry.zh_simp || "",
+                    pinyin: entry.pinyin || "",
+                    phonetic_en: "",
+                    part_of_speech: [],
+                    definitions: (entry.defs || []).map(function(m) { return { pos: "", text: m, example_en: "", example_zh: "" }; }),
+                    synonyms: [],
+                    antonyms: [],
+                    idioms: [],
+                    zh_trans: [],
+                    exchange: entry.exchange || "",
+                    wiki_summary: "",
+                    wiki_thumb: null,
+                    _enLow: en_norm,
+                    _pyNorm: py_norm,
+                    _pyJoined: py_joined,
+                    _defsNorm: defs_norm,
+                    _zhTransNorm: ""
+                  });
+
+                } else if (entry.type === "en-zh") {
+                  // ── ECDICT entry (English → Chinese) ──
+                  const en_word = entry.en || "";
+                  const en_norm = norm(en_word);
+                  const zh_trans = entry.zh_trans || [];
+                  const defs_norm = norm((entry.defs || []).join(" "));
+                  const zh_trans_norm = norm(zh_trans.join(" "));
+
+                  // Build definitions: English defs first, then Chinese translations
+                  const definitions = [];
+                  if (entry.defs && entry.defs[0]) {
+                    definitions.push({ pos: "", text: entry.defs[0], example_en: "", example_zh: "" });
+                  }
+                  zh_trans.forEach(function(t) {
+                    definitions.push({ pos: "", text: t, example_en: "", example_zh: "" });
+                  });
+
+                  // Extract a display Chinese string from zh_trans
+                  var displayZh = "";
+                  if (zh_trans.length > 0) {
+                    displayZh = zh_trans.map(function(t) { return t.replace(/^[a-z]+\.\s*/i, ""); }).join("; ");
+                    if (displayZh.length > 40) displayZh = displayZh.substring(0, 40) + "…";
+                  }
+
+                  DICTIONARY.push({
+                    id: entry.id,
+                    _type: "en-zh",
+                    english_word: en_word,
+                    chinese_traditional: displayZh,
+                    chinese_simplified: "",
+                    pinyin: "",
+                    phonetic_en: entry.phonetic || "",
+                    part_of_speech: [],
+                    definitions: definitions,
+                    synonyms: [],
+                    antonyms: [],
+                    idioms: [],
+                    zh_trans: zh_trans,
+                    exchange: entry.exchange || "",
+                    wiki_summary: "",
+                    wiki_thumb: null,
+                    _enLow: en_norm,
+                    _pyNorm: "",
+                    _pyJoined: "",
+                    _defsNorm: defs_norm,
+                    _zhTransNorm: zh_trans_norm
+                  });
+                }
+              }
+
+              var progress = Math.round((i / lines.length) * 100);
+              var loadingText = document.getElementById('loading-text');
+              if (loadingText) loadingText.innerText = 'Loading Dictionary... ' + progress + '%';
+
+              if (i < lines.length) {
+                setTimeout(processChunk, 0); 
+              } else {
+                resolve();
+              }
+            };
+            
+            processChunk();
+          });
+          
+          console.log('Successfully loaded dictionary.jsonl! Total entries: ' + DICTIONARY.length);
+
+        } catch (err) {
+            console.error(err);
+            root.innerHTML = '<div style="padding:20px; text-align:center; color:red; font-family:sans-serif;">Error loading dictionary. Ensure \'dictionary.jsonl\' is in the same folder and you are running a local web server (e.g., python -m http.server).</div>';
+            return;
+        }
+
+        this.state.isLoaded = true;
+
+        // Preload speech synthesis voices (Chrome loads them async)
+        if (window.speechSynthesis) {
+          window.speechSynthesis.getVoices();
+          if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = function() {
+              window.speechSynthesis.getVoices();
+            };
+          }
+        }
+
+        document.addEventListener("mousedown", function(e) {
+          var search = document.getElementById('search-ref');
+          var dd = document.getElementById('dropdown-ref');
+          if (app.state.focused) {
+            if (search && search.contains(e.target)) return;
+            if (dd && dd.contains(e.target)) return;
+            app.state.focused = false;
+            app.updateSearchUI(app.state.query);
+          }
+        });
+        
+        root.innerHTML = '<style id="app-styles">' + this.getStaticCSS() + '</style><div id="app-wrapper"></div>';
+        this.render();
+      },
+
+      getCSSVars: function() {
+        var s = this.state;
+        var t = THEMES[s.themeId];
+        var scale = s.fontSize / 16;
+        return '--ink:'+t.ink+';--ink-l:'+t.inkLight+';--ink-m:'+t.inkMuted+';--paper:'+t.paper+';--pw:'+t.paperWarm+';--pd:'+t.paperDeep+';--accent:'+t.accent+';--ag:'+t.accentGlow+';--gold:'+t.gold+';--gs:'+t.goldSoft+';--bdr:'+t.border+';--card:'+t.cardBg+';--tab:'+t.tabBg+';--fs:'+s.fontSize+'px;--sc:'+scale+';--wodGrad:'+t.wodGrad+';--synBg:'+t.synBg+';--synColor:'+t.synColor+';--synBorder:'+t.synBorder+';--antBg:'+t.antBg+';--antColor:'+t.antColor+';--antBorder:'+t.antBorder+';';
+      },
+
+      render: function() {
+        var wrapper = document.getElementById('app-wrapper');
+        if (wrapper) wrapper.innerHTML = this.buildHTML();
+      },
+
+      flash: function(m) {
+        this.state.toast = m;
+        var tc = document.getElementById('toast-container');
+        if (tc) tc.innerHTML = m ? '<div class="toast">' + escapeHTML(m) + '</div>' : '';
+        var self = this;
+        clearTimeout(this.toastTimeout);
+        this.toastTimeout = setTimeout(function() {
+          if (self.state.toast === m) {
+            self.state.toast = null;
+            if (tc) tc.innerHTML = '';
+          }
+        }, 2000);
+      },
+
+      doSearch: function(v) {
+        this.state.query = v;
+        this.state.focused = true;
+        var self = this;
+        clearTimeout(this.searchTimeout);
+        if (!v.trim()) {
+            this.state.results = [];
+            this.updateSearchUI(v);
+            return;
+        }
+        this.searchTimeout = setTimeout(function() {
+          self.state.results = searchDB(v);
+          self.updateSearchUI(v);
+        }, 150);
+      },
+
+      updateSearchUI: function(v) {
+        var ddContainer = document.getElementById('dropdown-container');
+        if (ddContainer) ddContainer.innerHTML = this.buildDropdownHTML();
+        var clearContainer = document.getElementById('clear-btn-container');
+        if (clearContainer) {
+            clearContainer.innerHTML = v ? '<button class="sc" onclick="app.clearSearch()">' + I.X + '</button>' : "";
+        }
+      },
+
+      clearSearch: function() {
+        this.doSearch("");
+        var el = document.getElementById('search-input');
+        if (el) { el.value = ""; el.focus(); }
+      },
+
+      setFocused: function(val) {
+        this.state.focused = val;
+        this.updateSearchUI(this.state.query);
+      },
+
+      goHome: function() {
+        this.state.view = "home";
+        this.state.sel = null;
+        this.state.wiki = false;
+        this.state.focused = false;
+        this.render();
+      },
+
+      addHistory: function(type, label, sub, wordId) {
+        this.state.history = this.state.history.filter(function(h) { return !(h.type === type && h.label === label); });
+        this.state.history.unshift({ type: type, label: label, sub: sub, wordId: wordId, timestamp: Date.now() });
+        if (this.state.history.length > 100) this.state.history.length = 100;
+      },
+
+      openWord: function(w) {
+        this.state.sel = w;
+        this.state.view = "detail";
+        this.state.query = "";
+        this.state.results = [];
+        this.state.wiki = false;
+        this.state.focused = false;
+        this.state.detailTab = "cn";
+        var sub = w._type === "en-zh"
+          ? (w.phonetic_en ? w.phonetic_en : (w.zh_trans[0] || ""))
+          : (w.chinese_traditional + ' · ' + w.pinyin);
+        this.addHistory("word", w.english_word, sub, w.id);
+        this.render();
+      },
+
+      openWordById: function(id) {
+        var w = DICTIONARY.find(function(x) { return x.id === id; });
+        if(w) this.openWord(w);
+      },
+
+      openSearchResult: function(idx) {
+        var r = this.state.results[idx];
+        if (r.type === "word") this.openWord(r.data);
+      },
+
+      openFromHistory: function(idx) {
+        var h = this.state.history[idx];
+        var w = DICTIONARY.find(function(d) { return d.id === h.wordId; });
+        if (w) this.openWord(w);
+      },
+      
+      openFromIdiomIndex: function(wordId, index) {
+        var w = DICTIONARY.find(function(x) { return x.id === wordId; });
+        if (w && w.idioms && w.idioms[index]) {
+            this.flash('Selected Idiom: ' + w.idioms[index].en);
+        }
+      },
+
+      isFav: function(id) { return this.state.favs.some(function(f) { return f.id === id; }); },
+
+      toggleFav: function(id) {
+        var w = DICTIONARY.find(function(x) { return x.id === id; }) || this.state.sel;
+        var isCurrentlyFav = this.isFav(id);
+        if (isCurrentlyFav) {
+          this.state.favs = this.state.favs.filter(function(x) { return x.id !== id; });
+          this.flash("Removed from favorites");
+        } else {
+          var copy = {};
+          for (var k in w) copy[k] = w[k];
+          copy.date_added = new Date().toISOString();
+          this.state.favs.push(copy);
+          this.flash("Added to favorites ★");
+        }
+        if (this.state.view === "favorites") {
+          this.render();
+        } else {
+          var starBtn = document.getElementById('star-btn-' + id);
+          if (starBtn) {
+            var nowFav = this.isFav(id);
+            starBtn.className = 'abtn ' + (nowFav ? 'on' : '');
+            starBtn.innerHTML = I.Star(nowFav) + ' ' + (nowFav ? 'Saved' : 'Save');
+          }
+        }
+      },
+
+      speak: function(text, lang, btnElement) {
+        if (!window.speechSynthesis || !text) return;
+        window.speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(text);
+        u.rate = 0.9;
+        if (btnElement) btnElement.classList.add('sp');
+        u.onend = function() { if (btnElement) btnElement.classList.remove('sp'); };
+        u.onerror = function() { if (btnElement) btnElement.classList.remove('sp'); };
+
+        if (lang === "zh") {
+          // Try to find the best available Chinese voice
+          var voices = window.speechSynthesis.getVoices();
+          var zhVoice = null;
+          // Priority: zh-TW > zh-CN > zh-HK > any zh
+          var prefs = ["zh-CN", "zh-TW", "zh-HK", "zh"];
+          for (var p = 0; p < prefs.length && !zhVoice; p++) {
+            for (var v = 0; v < voices.length; v++) {
+              if (voices[v].lang && voices[v].lang.replace(/_/g, '-').toLowerCase().indexOf(prefs[p].toLowerCase()) === 0) {
+                zhVoice = voices[v]; break;
+              }
+            }
+          }
+          if (zhVoice) {
+            u.voice = zhVoice;
+            u.lang = zhVoice.lang;
+          } else {
+            u.lang = "zh-TW";
+          }
+        } else {
+          u.lang = "en-US";
+        }
+        window.speechSynthesis.speak(u);
+      },
+
+      toggleWiki: function() {
+        this.state.wiki = !this.state.wiki;
+        var btn = document.getElementById('wiki-btn');
+        if (btn) btn.className = 'abtn ' + (this.state.wiki ? 'on' : '');
+        var container = document.getElementById('wiki-container');
+        if (container) container.innerHTML = this.buildWikiHTML();
+      },
+
+      copyWord: function(id) {
+        var w = DICTIONARY.find(function(x) { return x.id === id; });
+        if (!w) return;
+        var text;
+        if (w._type === "en-zh") {
+          text = w.english_word + (w.phonetic_en ? ' ' + w.phonetic_en : '') + ' — ' + w.zh_trans.join('; ');
+        } else {
+          text = w.english_word + ' (' + w.chinese_traditional + ') — ' + w.pinyin;
+        }
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text);
+          this.flash("Copied to clipboard");
+        }
+      },
+
+      tagClick: function(tag) {
+        var f = DICTIONARY.find(function(w) { return w.english_word.toLowerCase() === tag.toLowerCase(); });
+        if (f) this.openWord(f);
+        else this.flash('"' + tag + '" not found in current dictionary');
+      },
+
+      clearHistory: function(e) {
+        if (e) e.stopPropagation();
+        this.state.history = [];
+        this.flash("Search history cleared");
+        this.updateSearchUI(this.state.query);
+        var histWrap = document.getElementById('hist-body-wrap');
+        if (histWrap) histWrap.innerHTML = this.buildHistorySettingsHTML();
+      },
+
+      removeHistoryItem: function(e, idx) {
+        if (e) e.stopPropagation();
+        this.state.history.splice(idx, 1);
+        this.updateSearchUI(this.state.query);
+        var histWrap = document.getElementById('hist-body-wrap');
+        if (histWrap) histWrap.innerHTML = this.buildHistorySettingsHTML();
+      },
+
+      setThemeId: function(id) {
+        this.state.themeId = id;
+        var appCont = document.getElementById('app-container');
+        if (appCont) appCont.style.cssText = this.getCSSVars();
+        Object.values(THEMES).forEach(function(th) {
+          var card = document.getElementById('theme-card-' + th.id);
+          if (card) {
+            if (th.id === id) {
+              card.classList.add('sel');
+              card.style.borderColor = THEMES[id].accent;
+              if (!card.querySelector('.theme-check')) {
+                card.insertAdjacentHTML('afterbegin', '<div class="theme-check">' + I.Check + '</div>');
+              }
+            } else {
+              card.classList.remove('sel');
+              card.style.borderColor = th.border;
+              var check = card.querySelector('.theme-check');
+              if (check) check.remove();
+            }
+          }
+        });
+      },
+
+      setFontSize: function(val) {
+        this.state.fontSize = val;
+        var appCont = document.getElementById('app-container');
+        if (appCont) appCont.style.cssText = this.getCSSVars();
+        FONT_SIZES.forEach(function(fs) {
+           var btn = document.getElementById('fs-btn-' + fs.value);
+           if (btn) btn.className = 'fs-btn ' + (val === fs.value ? 'sel' : '');
+        });
+      },
+
+      setView: function(v) { 
+        this.state.view = v; 
+        this.state.sel = null; 
+        this.state.focused = false; 
+        this.render();
+      },
+
+      toggleHistorySettings: function() {
+        this.state.showHistorySettings = !this.state.showHistorySettings;
+        var chevron = document.getElementById('hist-chevron');
+        if (chevron) chevron.className = 'hist-chevron ' + (this.state.showHistorySettings ? 'open' : '');
+        var wrap = document.getElementById('hist-body-wrap');
+        if (wrap) wrap.innerHTML = this.buildHistorySettingsHTML();
+      },
+
+      setDetailTab: function(tab) {
+        this.state.detailTab = tab;
+        var cnBtn = document.getElementById('dtab-cn');
+        var enBtn = document.getElementById('dtab-en');
+        if (cnBtn) cnBtn.className = 'dtab' + (tab === 'cn' ? ' dtab-on' : '');
+        if (enBtn) enBtn.className = 'dtab' + (tab === 'en' ? ' dtab-on' : '');
+        var cnPanel = document.getElementById('dtab-cn-panel');
+        var enPanel = document.getElementById('dtab-en-panel');
+        if (cnPanel) cnPanel.style.display = tab === 'cn' ? 'block' : 'none';
+        if (enPanel) enPanel.style.display = tab === 'en' ? 'block' : 'none';
+      },
+
+      // Parse zh_trans items like ["n. 亲切的；和蔼的", "ad. 亲切地"] into POS-grouped structure
+      parsePosGroups: function(zhTransList) {
+        var groups = [];
+        var groupMap = {};
+        var posRegex = /^([a-z]+\.)\s*/i;
+        for (var i = 0; i < zhTransList.length; i++) {
+          var item = zhTransList[i];
+          var match = item.match(posRegex);
+          var pos = match ? match[1] : "";
+          var text = match ? item.substring(match[0].length) : item;
+          // Split multiple definitions on Chinese semicolons and commas
+          var defs = text.split(/[；;]/).map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+          if (pos && groupMap[pos] !== undefined) {
+            groups[groupMap[pos]].defs = groups[groupMap[pos]].defs.concat(defs);
+          } else {
+            groupMap[pos] = groups.length;
+            groups.push({ pos: pos, defs: defs });
+          }
+        }
+        return groups;
+      },
+
+      buildDropdownHTML: function() {
+        var s = this.state;
+        var showDropdown = s.focused && s.query.trim().length === 0 && s.history.length > 0;
+        var showResults = s.focused && s.query.trim().length > 0;
+        var html = "";
+        
+        if (showDropdown) {
+          html += '<div class="dd" id="dropdown-ref"><div class="dd-hdr"><span>' + I.Clock + ' Recent</span><button onclick="app.clearHistory(event)">Clear All</button></div>';
+          s.history.slice(0, 10).forEach(function(h, idx) {
+            html += '<div class="di" onclick="app.openFromHistory(' + idx + ')"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0"><span style="color:var(--ink-m);flex-shrink:0">' + I.Clock + '</span><span class="di-en" style="flex:1;min-width:0">' + escapeHTML(h.label) + '</span></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><span class="di-tag ' + (h.type === 'idiom' ? 'di-tag-idiom' : 'di-tag-word') + '">' + h.type + '</span><button class="di-rm" onclick="app.removeHistoryItem(event, ' + idx + ')">' + I.X + '</button></div></div>';
+          });
+          html += '</div>';
+        } else if (showResults) {
+          html += '<div class="dd" id="dropdown-ref">';
+          if (s.results.length > 0) {
+            s.results.forEach(function(r, idx) {
+              html += '<div class="di" onclick="app.openSearchResult(' + idx + ')"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">' + (r.type === 'idiom' ? '<span style="color:var(--gold);flex-shrink:0">' + I.Quote + '</span>' : "") + '<span class="di-en" style="flex:1;min-width:0">' + escapeHTML(r.label) + '</span></div><div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><span class="di-zh">' + escapeHTML(r.sub) + '</span><span class="di-tag ' + (r.type === 'idiom' ? 'di-tag-idiom' : 'di-tag-word') + '">' + r.type + '</span></div></div>';
+            });
+          } else {
+            html += '<div style="padding:18px;text-align:center;color:var(--ink-m);font-size:var(--fs)">No results for "' + escapeHTML(s.query) + '"<div style="font-size:12px;margin-top:4px">Try English, 中文, or Pinyin</div></div>';
+          }
+          html += '</div>';
+        }
+        return html;
+      },
+
+      buildWikiHTML: function() {
+        if (!this.state.wiki || !this.state.sel) return "";
+        var sel = this.state.sel;
+        return '<div class="ws af" style="margin-top:24px;">' + (sel.wiki_thumb ? '<div class="wt"><img src="' + sel.wiki_thumb + '" alt="' + sel.english_word + '" onerror="this.parentElement.style.display=\'none\'"/><div class="wt-ov"></div></div>' : "") + '<div class="wb"><h4>' + I.Wiki + ' Wikipedia</h4><p class="wbtx">' + (sel.wiki_summary || 'No Wikipedia article linked for this entry.') + '</p><p class="wbn">Live lookup requires active internet connection.</p></div></div>';
+      },
+
+      buildHistorySettingsHTML: function() {
+        var s = this.state;
+        if (!s.showHistorySettings) return "";
+        var html = "";
+        if (s.history.length > 0) {
+          html += '<div class="hist-body">';
+          s.history.forEach(function(h, idx) {
+            html += '<div class="hist-item"><div class="hist-item-info"><div class="hist-item-label">' + escapeHTML(h.label) + '</div><div class="hist-item-sub">' + escapeHTML(h.sub) + '</div></div><div style="display:flex;align-items:center;gap:6px"><span class="di-tag ' + (h.type === 'idiom' ? 'di-tag-idiom' : 'di-tag-word') + '">' + h.type + '</span><button class="di-rm" style="opacity:1" onclick="app.removeHistoryItem(event, ' + idx + ')">' + I.X + '</button></div></div>';
+          });
+          html += '</div>';
+          html += '<div class="hist-clear" onclick="app.clearHistory(event)">' + I.Trash + ' <span style="margin-left:6px">Clear All History</span></div>';
+        } else {
+          html += '<div style="padding:24px;text-align:center;color:var(--ink-m);font-size:14px;border-top:1px solid var(--bdr)">No search history yet</div>';
+        }
+        return html;
+      },
+
+      getStaticCSS: function() {
+        return "@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');*{margin:0;padding:0;box-sizing:border-box}body{background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}.app{font-family:var(--font-sans);font-size:var(--fs);max-width:430px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative;overflow-x:hidden;border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);--font-serif:'Source Serif 4','Noto Serif TC',Georgia,serif;--font-sans:'DM Sans',-apple-system,sans-serif;--font-zh:'Noto Serif TC',serif;}@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes scaleIn{from{transform:scale(.97) translateY(-4px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}.af{animation:fadeUp .45s ease both}.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.hdr{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--paper);z-index:100}.hdr-brand{display:flex;align-items:baseline;gap:6px}.hdr-brand h1{font-family:var(--font-serif);font-size:14px;font-weight:700;color:var(--ink)}.hdr-brand .zh{font-family:var(--font-zh);color:var(--accent);font-size:13px;font-weight:600}.brand-full{font-family:var(--font-serif);font-size:calc(21px * var(--sc));font-weight:700;letter-spacing:-.4px;color:var(--ink);line-height:1.2}.brand-full .dr{color:var(--accent)}.hdr-back{display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--accent);cursor:pointer;font-family:var(--font-sans);font-size:15px;font-weight:500;padding:4px 0}.sw{padding:16px 20px;position:relative}.sb{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:12px 16px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.06)}.sb:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--ag),0 4px 12px rgba(0,0,0,.08)}.sb input{flex:1;border:none;outline:none;font-family:var(--font-sans);font-size:var(--fs);color:var(--ink);background:transparent}.sb input::placeholder{color:var(--ink-m)}.sb .si{color:var(--ink-m);flex-shrink:0}.sc{background:none;border:none;color:var(--ink-m);cursor:pointer;padding:2px;display:flex;align-items:center}.dd{position:absolute;top:72px;left:20px;right:20px;background:var(--card);border:1px solid var(--bdr);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.1);z-index:200;overflow:hidden;animation:scaleIn .2s ease;max-height:360px;overflow-y:auto}.dd-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 6px;border-bottom:1px solid var(--bdr)}.dd-hdr span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink-m);display:flex;align-items:center;gap:5px}.dd-hdr button{font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--font-sans)}.di{padding:12px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .2s;border-bottom:1px solid var(--bdr);gap:8px}.di:last-child{border-bottom:none}.di:hover{background:var(--ag)}.di-en{font-family:var(--font-serif);font-size:var(--fs);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.di-zh{font-family:var(--font-zh);font-size:calc(var(--fs) - 2px);color:var(--ink-l);white-space:nowrap;flex-shrink:0}.di-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:4px;flex-shrink:0}.di-tag-idiom{background:var(--gs);color:var(--gold)}.di-tag-word{background:var(--ag);color:var(--accent)}.di-rm{background:none;border:none;color:var(--ink-m);cursor:pointer;padding:4px;display:flex;align-items:center;flex-shrink:0;opacity:0;transition:opacity .15s}.di:hover .di-rm{opacity:1}.di-rm:hover{color:var(--accent)}.wod{margin:4px 20px 20px;background:var(--wodGrad);border:1px solid var(--gs);border-radius:16px;padding:24px;position:relative;overflow:hidden;cursor:pointer;transition:all .3s}.wod:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.wod-l{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);margin-bottom:14px}.wod-w{font-family:var(--font-serif);font-size:calc(32px * var(--sc));font-weight:700;color:var(--ink);letter-spacing:-.5px;margin-bottom:4px}.wod-c{font-family:var(--font-zh);font-size:calc(22px * var(--sc));color:var(--ink-l);margin-bottom:10px}.wod-d{font-size:var(--fs);color:var(--ink-l);line-height:1.6}.qs{padding:0 20px 20px}.sl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-m);margin-bottom:12px}.qg{display:grid;grid-template-columns:1fr 1fr;gap:10px}.qc{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:16px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;height:100%}.qc:hover{border-color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.06);transform:translateY(-1px)}.qc-zh-title{font-family:var(--font-zh);font-size:calc(22px * var(--sc));font-weight:700;color:var(--ink);line-height:1.2}.qc-py{font-size:calc(13px * var(--sc));color:var(--accent);font-weight:500;margin:6px 0}.qc-en-def{font-family:var(--font-serif);font-size:calc(14px * var(--sc));color:var(--ink-m);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5}.dp{padding:0 20px 120px;animation:fadeIn .3s ease}.dh{padding:20px 0 8px}.dw{font-family:var(--font-serif);font-size:calc(40px * var(--sc));font-weight:900;color:var(--ink);letter-spacing:-1px;line-height:1.1}.dc{font-family:var(--font-zh);font-size:calc(28px * var(--sc));color:var(--ink-l);margin-top:4px}.dph{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}.ph{font-family:var(--font-serif);font-size:calc(15px * var(--sc));font-style:italic;color:var(--ink-m)}.py{font-size:calc(15px * var(--sc));color:var(--accent);font-weight:500}.pos{font-size:calc(12px * var(--sc));background:var(--pw);padding:3px 10px;border-radius:100px;color:var(--ink-m);font-weight:600}.ab{display:flex;gap:8px;margin:18px 0;flex-wrap:wrap}.abtn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:1.5px solid var(--bdr);border-radius:100px;background:var(--card);color:var(--ink-l);font-family:var(--font-sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}.abtn:hover{border-color:var(--accent);color:var(--accent);background:var(--ag)}.abtn.on{border-color:var(--accent);color:var(--accent);background:var(--ag)}.abtn.sp{animation:pulse .6s ease infinite;border-color:var(--accent);color:var(--accent)}.ds{margin-bottom:28px}.dst{font-family:var(--font-serif);font-size:calc(18px * var(--sc));font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:8px}.dst::after{content:'';flex:1;height:1px;background:var(--bdr)}.dfi{margin-bottom:18px}.dn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--pw);font-size:12px;font-weight:700;color:var(--ink-l);margin-right:10px;flex-shrink:0}.dpos{font-size:calc(13px * var(--sc));font-style:italic;color:var(--accent);font-weight:500;margin-right:6px}.dtx{font-size:var(--fs);color:var(--ink);line-height:1.6}.dex{margin-top:8px;padding:12px 16px;background:var(--pw);border-radius:8px;border-left:3px solid var(--accent)}.dex-en{font-size:calc(var(--fs) - 1px);color:var(--ink);font-style:italic;line-height:1.5}.dex-zh{font-family:var(--font-zh);font-size:calc(var(--fs) - 1px);color:var(--ink-l);margin-top:4px;line-height:1.5}.tg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.tag{padding:6px 14px;border-radius:100px;font-size:calc(13px * var(--sc));font-weight:500;cursor:pointer;transition:all .2s}.ts{background:var(--synBg);color:var(--synColor);border:1px solid var(--synBorder)}.ts:hover{filter:brightness(.95)}.ta{background:var(--antBg);color:var(--antColor);border:1px solid var(--antBorder)}.ta:hover{filter:brightness(.95)}.ic{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:16px;margin-bottom:10px;transition:all .2s}.ic:hover{box-shadow:0 1px 3px rgba(0,0,0,.06);border-color:var(--gs)}.ic-en{font-family:var(--font-serif);font-size:calc(15px * var(--sc));font-weight:600;font-style:italic;color:var(--ink);margin-bottom:4px}.ic-zh{font-family:var(--font-zh);font-size:calc(18px * var(--sc));color:var(--accent);margin-bottom:2px}.ic-py{font-size:calc(13px * var(--sc));color:var(--ink-m)}.ws{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:24px}.wt{width:100%;height:180px;overflow:hidden;background:var(--pd);position:relative}.wt img{width:100%;height:100%;object-fit:cover;display:block}.wt-ov{position:absolute;bottom:0;left:0;right:0;height:50px;background:linear-gradient(transparent,var(--card))}.wb{padding:16px 20px 20px}.wb h4{font-family:var(--font-serif);font-size:calc(16px * var(--sc));font-weight:600;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px}.wbtx{font-size:var(--fs);color:var(--ink-l);line-height:1.7}.wbn{font-size:11px;color:var(--ink-m);margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr)}.tb{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--tab);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--bdr);display:flex;justify-content:space-around;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:300}.tbn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px;background:none;border:none;cursor:pointer;color:var(--ink-m);transition:color .2s}.tbn.on{color:var(--accent)}.tbn span{font-size:11px;font-weight:600;letter-spacing:.3px}.fl{padding:10px 20px 120px}.fi{display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--card);border:1px solid var(--bdr);border-radius:8px;margin-bottom:10px;cursor:pointer;transition:all .2s}.fi:hover{border-color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.06)}.fi-i{flex:1}.fi-en{font-family:var(--font-serif);font-size:calc(18px * var(--sc));font-weight:600;color:var(--ink)}.fi-zh{font-family:var(--font-zh);font-size:calc(15px * var(--sc));color:var(--ink-m);margin-top:2px}.fi-a{display:flex;gap:8px}.fab{padding:8px;border-radius:50%;border:1px solid var(--bdr);background:var(--card);color:var(--ink-m);cursor:pointer;display:flex;align-items:center;transition:all .2s}.fab:hover{color:var(--accent);border-color:var(--accent)}.fab.dng:hover{color:#c0392b;border-color:#c0392b}.es{text-align:center;padding:60px 20px;color:var(--ink-m)}.es .em{font-size:48px;margin-bottom:12px}.es p{font-size:var(--fs);line-height:1.6}.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 20px;border-radius:100px;font-size:14px;font-weight:500;z-index:400;animation:fadeUp .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.15);white-space:nowrap}.copy{text-align:center;padding:24px 20px 80px;font-size:11px;color:var(--ink-m);letter-spacing:.3px;line-height:1.6}.sett{padding:20px 20px 120px;animation:fadeIn .3s ease}.sett h2{font-family:var(--font-serif);font-size:calc(28px * var(--sc));font-weight:700;letter-spacing:-.5px;color:var(--ink);margin-bottom:4px}.sett-sub{font-size:var(--fs);color:var(--ink-m);margin-bottom:28px}.sett-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-m);margin-bottom:14px}.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:32px}.theme-card{border:2px solid var(--bdr);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}.theme-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--ag)}.theme-check{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center}.theme-preview{height:40px;border-radius:6px;margin-bottom:10px;display:flex;gap:3px;overflow:hidden;border:1px solid rgba(0,0,0,.06)}.theme-preview div{flex:1;height:100%}.theme-name{font-weight:600;font-size:14px;color:var(--ink);display:flex;align-items:center;gap:6px}.fs-section{margin-bottom:32px}.fs-bar{display:flex;align-items:center;gap:0;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;overflow:hidden}.fs-btn{flex:1;padding:14px 0;text-align:center;font-family:var(--font-sans);font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink-l);transition:all .2s;border-right:1px solid var(--bdr);position:relative}.fs-btn:last-child{border-right:none}.fs-btn.sel{background:var(--accent);color:#fff}.fs-btn:hover:not(.sel){background:var(--ag)}.fs-preview{margin-top:14px;padding:16px;background:var(--pw);border-radius:8px;border-left:3px solid var(--accent)}.fs-preview-en{font-family:var(--font-serif);font-size:var(--fs);font-weight:600;color:var(--ink);margin-bottom:2px}.fs-preview-zh{font-family:var(--font-zh);font-size:var(--fs);color:var(--ink-l)}.hist-section{margin-bottom:32px}.hist-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden}.hist-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;cursor:pointer;transition:background .2s}.hist-header:hover{background:var(--ag)}.hist-header-left{display:flex;align-items:center;gap:10px}.hist-header-left .icon{color:var(--ink-m)}.hist-header-left .info h4{font-size:15px;font-weight:600;color:var(--ink)}.hist-header-left .info p{font-size:12px;color:var(--ink-m);margin-top:1px}.hist-chevron{color:var(--ink-m);transition:transform .2s;font-size:18px}.hist-chevron.open{transform:rotate(180deg)}.hist-body{border-top:1px solid var(--bdr);max-height:300px;overflow-y:auto}.hist-item{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--bdr);transition:background .15s}.hist-item:last-child{border-bottom:none}.hist-item:hover{background:var(--ag)}.hist-item-info{flex:1;min-width:0}.hist-item-label{font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hist-item-sub{font-size:12px;color:var(--ink-m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hist-clear{display:flex;align-items:center;justify-content:center;padding:12px;border-top:1px solid var(--bdr);cursor:pointer;font-size:13px;font-weight:600;color:var(--accent);transition:background .2s}.hist-clear:hover{background:var(--ag)}.about-section{padding:20px;background:var(--card);border:1px solid var(--bdr);border-radius:12px}.about-section h3{font-family:var(--font-serif);font-size:calc(16px * var(--sc));font-weight:600;color:var(--ink);margin-bottom:8px}.about-section p{font-size:calc(var(--fs) - 1px);color:var(--ink-l);line-height:1.6}.zh-trans-section{margin-top:12px;padding:16px;background:var(--pw);border-radius:10px;border-left:3px solid var(--gold)}.zh-trans-item{font-family:var(--font-zh);font-size:var(--fs);color:var(--ink);line-height:1.8;display:flex;align-items:center;gap:4px}.exchange-info{margin-top:16px;padding:12px 16px;background:var(--pw);border-radius:8px;font-size:calc(var(--fs) - 2px);color:var(--ink-l);line-height:1.6}.exchange-info strong{color:var(--ink);font-weight:600}.spk{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid var(--bdr);border-radius:50%;background:var(--card);color:var(--ink-m);cursor:pointer;transition:all .2s;vertical-align:middle;margin-left:4px;flex-shrink:0;padding:0;line-height:1}.spk:hover{color:var(--accent);border-color:var(--accent);background:var(--ag)}.spk.sp{animation:pulse .6s ease infinite;color:var(--accent);border-color:var(--accent)}.dfi-row{display:flex;align-items:flex-start;gap:0}.dfi-text-wrap{flex:1;min-width:0}.dfi-spk{flex-shrink:0;margin-top:2px;margin-left:6px}.dex-line{display:flex;align-items:center;gap:2px}.dex-line-text{flex:1;min-width:0}.ic-line{display:flex;align-items:center;gap:4px}.ic-line-text{flex:1;min-width:0}.wcard{background:var(--wodGrad);border:1px solid var(--gs);border-radius:16px;padding:28px 24px 20px;margin-bottom:20px;position:relative}.wcard-word{font-family:var(--font-serif);font-size:calc(38px * var(--sc));font-weight:900;color:var(--ink);letter-spacing:-1px;line-height:1.1}.wcard-zh{font-family:var(--font-zh);font-size:calc(26px * var(--sc));color:var(--ink-l);margin-top:6px}.wcard-ph{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}.wcard-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}.wcard-actions .abtn{background:rgba(255,255,255,0.6);backdrop-filter:blur(4px)}.dtab-bar{display:flex;background:var(--card);border:1.5px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:20px}.dtab{flex:1;padding:10px 0;text-align:center;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink-m);transition:all .2s;border-right:1px solid var(--bdr)}.dtab:last-child{border-right:none}.dtab-on{background:var(--accent);color:#fff}.dtab:hover:not(.dtab-on){background:var(--ag)}.pos-group{margin-bottom:20px}.pos-label{display:inline-block;font-size:calc(13px * var(--sc));font-weight:700;color:var(--accent);background:var(--ag);padding:3px 12px;border-radius:6px;margin-bottom:10px;font-style:italic;letter-spacing:.3px}.pos-defs{padding-left:4px}.pos-def-item{display:flex;align-items:flex-start;gap:0;margin-bottom:6px;line-height:1.6}.pos-def-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--pw);font-size:11px;font-weight:700;color:var(--ink-l);margin-right:8px;flex-shrink:0;margin-top:2px}.pos-def-text{font-family:var(--font-zh);font-size:var(--fs);color:var(--ink);flex:1;min-width:0}";
+      },
+
+      buildHTML: function() {
+        var s = this.state;
+        var t = THEMES[s.themeId];
+        var wod = getWordOfDay();
+        var isDetail = s.view === "detail" || s.view === "settings";
+
+        var html = '<div class="app" id="app-container" style="' + this.getCSSVars() + '">';
+
+        // HDR
+        html += '<div class="hdr">';
+        if (isDetail) {
+          html += '<button class="hdr-back" onclick="app.goHome()">' + I.Back + ' Back</button>';
+          html += '<div class="hdr-brand"><h1>Dr. T</h1><span class="zh">英中</span></div>';
+        } else {
+          html += '<div class="brand-full"><span class="dr">Dr. T</span> English-中文 Reference</div>';
+        }
+        html += '</div>';
+
+        // Search Wrapper 
+        if (s.view === "home" || s.view === "favorites") {
+          html += '<div class="sw"><div class="sb" id="search-ref"><span class="si">' + I.Search + '</span><input id="search-input" placeholder="Search English, 中文, or Pinyin…" value="' + escapeHTML(s.query) + '" oninput="app.doSearch(this.value)" onfocus="app.setFocused(true)" autocomplete="off" /><div id="clear-btn-container" style="display:flex;align-items:center;">' + (s.query ? '<button class="sc" onclick="app.clearSearch()">' + I.X + '</button>' : "") + '</div></div><div id="dropdown-container">' + this.buildDropdownHTML() + '</div></div>';
+        }
+
+        // Views
+        if (s.view === "home") {
+          html += '<div style="padding-bottom:20px">';
+          
+          if (wod) {
+              var wodSub = wod._type === "en-zh"
+                ? (wod.phonetic_en ? wod.phonetic_en : (wod.zh_trans[0] || ""))
+                : ((wod.chinese_traditional || "") + ' · ' + (wod.pinyin || ""));
+              html += '<div class="wod af" onclick="app.openWordById(' + wod.id + ')"><div class="wod-l">' + I.Sparkle + ' Word of the Day</div><div class="wod-w">' + wod.english_word + '</div><div class="wod-c">' + wodSub + '</div><div class="wod-d">' + (wod.definitions[0] ? wod.definitions[0].text : '') + '</div></div>';
+          }
+          
+          // Prefer zh-en entries for Explore cards
+          var zhEnEntries = DICTIONARY.filter(function(w) { return w._type === "zh-en"; });
+          var exploreEntries = zhEnEntries.length >= 10006 ? zhEnEntries.slice(10000, 10006) : DICTIONARY.slice(0, 6);
+
+          html += '<div class="qs af d2"><div class="sl">Explore</div><div class="qg">';
+          exploreEntries.forEach(function(w, i) {
+            html += '<div class="qc af d' + Math.min(i + 2, 4) + '" onclick="app.openWordById(' + w.id + ')"><div class="qc-zh-title">' + (w.chinese_traditional || w.english_word) + '</div><div class="qc-py">' + (w.pinyin || w.phonetic_en || '') + '</div><div class="qc-en-def">' + w.english_word + '</div></div>';
+          });
+          html += '</div></div><div class="copy">© 2026 TapTiger Development LLC. All rights reserved.</div></div>';
+        }
+
+        if (s.view === "detail" && s.sel) {
+          var sel = s.sel;
+          var isEnZh = sel._type === "en-zh";
+          
+          html += '<div class="dp">';
+
+          // ── WORD CARD ──
+          html += '<div class="wcard af">';
+          html += '<div class="wcard-word">' + sel.english_word + '</div>';
+          if (!isEnZh) {
+            html += '<div class="wcard-zh">' + sel.chinese_traditional;
+            if (sel.chinese_simplified && sel.chinese_simplified !== sel.chinese_traditional) {
+              html += ' <span style="opacity:0.5;font-size:0.75em">(' + sel.chinese_simplified + ')</span>';
+            }
+            html += '</div>';
+          }
+          html += '<div class="wcard-ph">';
+          if (sel.phonetic_en) html += '<span class="ph">' + sel.phonetic_en + '</span>';
+          if (!isEnZh && sel.pinyin) html += '<span class="py">' + sel.pinyin + '</span>';
+          html += '</div>';
+
+          // Action buttons row inside the card
+          html += '<div class="wcard-actions">';
+          html += '<button class="abtn" onclick="app.speak(\'' + safeQuote(sel.english_word) + '\', \'en\', this)">' + I.Speaker + ' English</button>';
+          if (!isEnZh && sel.chinese_traditional) {
+            html += '<button class="abtn" onclick="app.speak(\'' + safeQuote(sel.chinese_traditional) + '\', \'zh\', this)">' + I.Speaker + ' 中文</button>';
+          }
+          html += '<button class="abtn" onclick="app.copyWord(' + sel.id + ')">' + I.Copy + '</button>';
+          html += '<button id="star-btn-' + sel.id + '" class="abtn ' + (this.isFav(sel.id) ? 'on' : '') + '" onclick="app.toggleFav(' + sel.id + ')">' + I.Star(this.isFav(sel.id)) + '</button>';
+          html += '<button id="wiki-btn" class="abtn ' + (s.wiki ? 'on' : '') + '" onclick="app.toggleWiki()">' + I.Wiki + '</button>';
+          html += '</div>';
+          html += '</div>'; // end .wcard
+
+          html += '<div id="wiki-container">' + this.buildWikiHTML() + '</div>';
+
+          // ── EN-ZH ENTRY: TAB TOGGLE + POS-GROUPED DEFINITIONS ──
+          if (isEnZh) {
+            html += '<div class="dtab-bar af d1">';
+            html += '<button id="dtab-cn" class="dtab' + (s.detailTab === 'cn' ? ' dtab-on' : '') + '" onclick="app.setDetailTab(\'cn\')">英漢 EN-CN</button>';
+            html += '<button id="dtab-en" class="dtab' + (s.detailTab === 'en' ? ' dtab-on' : '') + '" onclick="app.setDetailTab(\'en\')">英英 EN-EN</button>';
+            html += '</div>';
+
+            // ── CN tab: POS-grouped Chinese definitions ──
+            html += '<div id="dtab-cn-panel" style="display:' + (s.detailTab === 'cn' ? 'block' : 'none') + '">';
+            if (sel.zh_trans && sel.zh_trans.length > 0) {
+              var posGroups = this.parsePosGroups(sel.zh_trans);
+              html += '<div class="ds af d2">';
+              posGroups.forEach(function(group) {
+                html += '<div class="pos-group">';
+                if (group.pos) {
+                  html += '<div class="pos-label">' + escapeHTML(group.pos) + '</div>';
+                }
+                html += '<div class="pos-defs">';
+                group.defs.forEach(function(def, di) {
+                  html += '<div class="pos-def-item">';
+                  if (group.defs.length > 1) {
+                    html += '<span class="pos-def-num">' + (di + 1) + '</span>';
+                  }
+                  html += '<span class="pos-def-text">' + escapeHTML(def) + '</span>';
+                  html += spkBtn(def, 'zh');
+                  html += '</div>';
+                });
+                html += '</div></div>';
+              });
+              html += '</div>';
+            }
+
+            // Word forms
+            if (sel.exchange) {
+              var exchangeParts = sel.exchange.split('/').filter(function(p) { return p.trim(); });
+              if (exchangeParts.length > 0) {
+                var labels = { p: "Past tense", d: "Past participle", i: "Present participle", '3': "3rd person singular", r: "Comparative", t: "Superlative", s: "Plural", '0': "Base form", '1': "Related" };
+                html += '<div class="ds"><div class="dst">變化 Word Forms</div><div class="exchange-info">';
+                exchangeParts.forEach(function(part) {
+                  var type = part.charAt(0);
+                  var form = part.substring(2);
+                  var label = labels[type] || type;
+                  html += '<div><strong>' + label + ':</strong> ' + escapeHTML(form) + '</div>';
+                });
+                html += '</div></div>';
+              }
+            }
+            html += '</div>'; // end CN panel
+
+            // ── EN tab: English definition ──
+            html += '<div id="dtab-en-panel" style="display:' + (s.detailTab === 'en' ? 'block' : 'none') + '">';
+            if (sel.definitions && sel.definitions.length > 0 && sel.definitions[0].text) {
+              html += '<div class="ds"><div class="dst">English Definition</div>';
+              html += '<div class="dfi"><div class="dfi-row"><span class="dn">1</span><div class="dfi-text-wrap"><span class="dtx">' + sel.definitions[0].text + '</span></div><span class="dfi-spk">' + spkBtn(sel.definitions[0].text, 'en') + '</span></div></div>';
+              html += '</div>';
+            } else {
+              html += '<div style="padding:24px;text-align:center;color:var(--ink-m);font-size:var(--fs)">No English-only definition available for this entry.</div>';
+            }
+            html += '</div>'; // end EN panel
+
+          } else {
+            // ── ZH-EN ENTRY: Standard definitions list ──
+            if (sel.definitions && sel.definitions.length > 0) {
+              html += '<div class="ds af d2"><div class="dst">Definitions</div>';
+              sel.definitions.forEach(function(d, i) {
+                html += '<div class="dfi"><div class="dfi-row"><span class="dn">' + (i + 1) + '</span><div class="dfi-text-wrap">' + (d.pos ? '<span class="dpos">' + d.pos + '</span>' : '') + '<span class="dtx">' + d.text + '</span></div><span class="dfi-spk">' + spkBtn(d.text, 'auto') + '</span></div>';
+                if (d.example_en) {
+                  html += '<div class="dex"><div class="dex-line"><span class="dex-line-text dex-en">"' + escapeHTML(d.example_en) + '"</span>' + spkBtn(d.example_en, 'en') + '</div>';
+                  if (d.example_zh) {
+                    html += '<div class="dex-line"><span class="dex-line-text dex-zh">' + escapeHTML(d.example_zh) + '</span>' + spkBtn(d.example_zh, 'zh') + '</div>';
+                  }
+                  html += '</div>';
+                }
+                html += '</div>';
+              });
+              html += '</div>';
+            }
+          }
+
+          // ── Synonyms / Antonyms (both types) ──
+          if (sel.synonyms && sel.synonyms.length > 0) {
+            html += '<div class="ds af d3"><div class="dst">辨析 Synonyms</div><div class="tg">' + sel.synonyms.map(function(sy) { return '<span class="tag ts" onclick="app.tagClick(\'' + escapeHTML(sy) + '\')">' + sy + '</span>'; }).join('') + '</div>';
+            if (sel.antonyms && sel.antonyms.length > 0) {
+              html += '<div class="dst" style="margin-top:16px">Antonyms</div><div class="tg">' + sel.antonyms.map(function(a) { return '<span class="tag ta" onclick="app.tagClick(\'' + escapeHTML(a) + '\')">' + a + '</span>'; }).join('') + '</div>';
+            }
+            html += '</div>';
+          }
+
+          // ── Idioms (both types) ──
+          if (sel.idioms && sel.idioms.length > 0) {
+            html += '<div class="ds af d4"><div class="dst">' + I.Book + ' Idioms & Sayings</div>';
+            sel.idioms.forEach(function(idm, i) {
+              html += '<div class="ic" onclick="app.openFromIdiomIndex(' + sel.id + ', ' + i + ')"><div class="ic-line"><span class="ic-line-text ic-zh">' + idm.zh + '</span>' + spkBtn(idm.zh, 'zh') + '</div><div class="ic-line"><span class="ic-line-text ic-en">"' + escapeHTML(idm.en) + '"</span>' + spkBtn(idm.en, 'en') + '</div><div class="ic-py">' + idm.pinyin + '</div></div>';
+            });
+            html += '</div>';
+          }
+          html += '</div>';
+        }
+
+        if (s.view === "favorites") {
+          html += '<div><div style="padding:20px 20px 0"><h2 style="font-family:var(--font-serif);font-size:calc(28px * var(--sc));font-weight:700;letter-spacing:-.5px;color:var(--ink)">Favorites</h2><p style="font-size:var(--fs);color:var(--ink-m);margin-top:4px">' + s.favs.length + ' saved ' + (s.favs.length === 1 ? 'word' : 'words') + '</p></div><div class="fl">';
+          if (s.favs.length === 0) {
+            html += '<div class="es af"><div class="em">☆</div><p>No favorites yet.<br/>Tap the star on any word to save it here.</p></div>';
+          } else {
+            s.favs.forEach(function(w) {
+              var subLine = w._type === "en-zh" ? (w.phonetic_en || (w.zh_trans && w.zh_trans[0]) || "") : ((w.chinese_traditional || "") + ' · ' + (w.pinyin || ""));
+              html += '<div class="fi af" onclick="app.openWordById(' + w.id + ')"><div class="fi-i"><div class="fi-en">' + w.english_word + '</div><div class="fi-zh">' + subLine + '</div></div><div class="fi-a" onclick="event.stopPropagation()"><button class="fab" onclick="app.speak(\'' + safeQuote(w.english_word) + '\',\'en\', this)">' + I.Speaker + '</button><button class="fab dng" onclick="app.toggleFav(' + w.id + ')">' + I.Trash + '</button></div></div>';
+            });
+          }
+          html += '</div></div>';
+        }
+
+        if (s.view === "settings") {
+          html += '<div class="sett"><h2>Settings</h2><p class="sett-sub">Customize your experience</p><div class="sett-label">Theme</div><div class="theme-grid">';
+          Object.values(THEMES).forEach(function(th) {
+            html += '<div id="theme-card-' + th.id + '" class="theme-card ' + (s.themeId === th.id ? 'sel' : '') + '" style="background:' + th.cardBg + ';border-color:' + (s.themeId === th.id ? t.accent : th.border) + '" onclick="app.setThemeId(\'' + th.id + '\')">' + (s.themeId === th.id ? '<div class="theme-check">' + I.Check + '</div>' : "") + '<div class="theme-preview"><div style="background:' + th.paper + '"></div><div style="background:' + th.accent + '"></div><div style="background:' + th.paperWarm + '"></div><div style="background:' + th.ink + '"></div></div><div class="theme-name" style="color:' + th.ink + '"><span>' + th.emoji + '</span> ' + th.name + '</div></div>';
+          });
+          html += '</div>';
+
+          html += '<div class="fs-section"><div class="sett-label">Font Size</div><div class="fs-bar">';
+          FONT_SIZES.forEach(function(fs) {
+            html += '<button id="fs-btn-' + fs.value + '" class="fs-btn ' + (s.fontSize === fs.value ? 'sel' : '') + '" onclick="app.setFontSize(' + fs.value + ')" style="font-size:' + fs.value + 'px">' + fs.label + '</button>';
+          });
+          html += '</div><div class="fs-preview"><div class="fs-preview-en">perseverance</div><div class="fs-preview-zh">毅力 · yì lì</div></div></div>';
+
+          html += '<div class="hist-section"><div class="sett-label">Search History</div><div class="hist-card"><div class="hist-header" onclick="app.toggleHistorySettings()"><div class="hist-header-left"><span class="icon">' + I.Clock + '</span><div class="info"><h4>View History</h4><p>' + s.history.length + ' ' + (s.history.length === 1 ? 'search' : 'searches') + ' saved</p></div></div><span id="hist-chevron" class="hist-chevron ' + (s.showHistorySettings ? 'open' : '') + '">▾</span></div><div id="hist-body-wrap">' + this.buildHistorySettingsHTML() + '</div></div></div>';
+
+          html += '<div class="about-section"><h3>About</h3><p>Dr. T English-中文 Reference is a premium, offline-first dictionary using the CC-CEDICT and ECDICT databases.</p><p style="margin-top:12px;font-size:12px;color:var(--ink-m)">Version 2.0.0<br/>© 2026 TapTiger Development LLC. All rights reserved.</p></div></div>';
+        }
+
+        // TAB BAR
+        html += '<div class="tb"><button class="tbn ' + (s.view === 'home' ? 'on' : '') + '" onclick="app.setView(\'home\')">' + I.Home + '<span>Home</span></button><button class="tbn ' + (s.view === 'favorites' ? 'on' : '') + '" onclick="app.setView(\'favorites\')">' + I.Heart + '<span>Favorites</span></button><button class="tbn ' + (s.view === 'settings' ? 'on' : '') + '" onclick="app.setView(\'settings\')">' + I.Gear + '<span>Settings</span></button></div>';
+
+        // TOAST
+        html += '<div id="toast-container">';
+        if (s.toast) html += '<div class="toast">' + escapeHTML(s.toast) + '</div>';
+        html += '</div></div>';
+        return html;
+      }
+    };
+
+    app.init();
+  </script>
+</body>
+</html>
