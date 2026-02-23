@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Dr. T English-中文 Reference</title>
+  <title>Dr. 張簡 En-中 Reference</title>
+
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Dr. 張簡">
 </head>
 <body>
   <div id="root"></div>
@@ -41,6 +46,7 @@
       Clock: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
       Quote: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" opacity="0.5"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>`,
       SpeakerMini: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`,
+      ExtLink: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`,
     };
 
     // ─── Utility ───────────────────────────────────────────────────────────
@@ -60,50 +66,72 @@
       return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
     }
 
-    // Helper: safely escape text for use inside single-quoted JS strings in onclick attributes
+    var TONE_MAP = {
+      a: ['\u0101','\u00e1','\u01ce','\u00e0','a'],
+      e: ['\u0113','\u00e9','\u011b','\u00e8','e'],
+      i: ['\u012b','\u00ed','\u01d0','\u00ec','i'],
+      o: ['\u014d','\u00f3','\u01d2','\u00f2','o'],
+      u: ['\u016b','\u00fa','\u01d4','\u00f9','u'],
+      v: ['\u01d6','\u01d8','\u01da','\u01dc','\u00fc']
+    };
+    function pinyinTone(str) {
+      if (!str) return "";
+      return str.replace(/([a-zA-Zü]+)(\d)/g, function(match, syl, tone) {
+        var t = parseInt(tone);
+        if (t < 1 || t > 5) return match;
+        var s = syl.toLowerCase().replace(/v/g, 'ü');
+        var vowels = 'aeiouü';
+        var idx = -1;
+        if (s.indexOf('a') !== -1) idx = s.indexOf('a');
+        else if (s.indexOf('e') !== -1) idx = s.indexOf('e');
+        else if (s.indexOf('ou') !== -1) idx = s.indexOf('o');
+        else {
+          for (var i = s.length - 1; i >= 0; i--) {
+            if (vowels.indexOf(s[i]) !== -1) { idx = i; break; }
+          }
+        }
+        if (idx === -1) return s;
+        var ch = s[idx] === 'ü' ? 'v' : s[idx];
+        var toned = TONE_MAP[ch] ? TONE_MAP[ch][t - 1] : s[idx];
+        return s.substring(0, idx) + toned + s.substring(idx + 1);
+      });
+    }
+
     function safeQuote(text) {
       if (!text) return "";
       return text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     }
 
-    // Helper: inline mini speaker button. Detects language automatically if lang is "auto"
     function spkBtn(text, lang) {
       if (!text) return "";
       var safe = safeQuote(text);
-      // Auto-detect: if text contains CJK characters, use zh
       if (lang === "auto") {
         lang = /[\u4e00-\u9fff\u3400-\u4dbf]/.test(text) ? "zh" : "en";
       }
       return ' <button class="spk" onclick="event.stopPropagation();app.speak(\'' + safe + '\',\'' + lang + '\',this)" title="Listen">' + I.SpeakerMini + '</button>';
     }
 
-    // ─── Linkify: make Chinese chars and English words clickable in definitions ───
     var SKIP_WORDS = new Set(["a","an","the","of","to","in","on","at","is","it","or","and","for","by","as","be","do","if","no","so","up","we","he","me","my","us","not","but","are","was","has","had","its","all","can","may","one","two","any","few","who","how","also","from","that","this","with","have","will","been","were","into","than","them","they","each","more","some","very","much","most","only","over","just","such","same","does","did","get","got","its","yet","our","own","way","may"]);
     function linkify(text) {
       if (!text) return "";
-      // Tokenize into segments: CJK runs, English words, pinyin brackets, and everything else
-      // Pattern: CJK chars | English words | bracketed pinyin [xxx] | other chars
       var parts = text.match(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+|[a-zA-Z'\u00C0-\u017F]+|\[[^\]]*\]|[^a-zA-Z\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\[]+/g);
       if (!parts) return escapeHTML(text);
       var html = "";
       for (var i = 0; i < parts.length; i++) {
         var p = parts[i];
         if (/^[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+$/.test(p)) {
-          // CJK block — make each character individually clickable
           for (var c = 0; c < p.length; c++) {
             var ch = p[c];
             html += '<span class="wlink wlink-zh" onclick="event.stopPropagation();app.lookupWord(\'' + ch + '\')">' + ch + '</span>';
           }
         } else if (/^[a-zA-Z'\u00C0-\u017F]+$/.test(p)) {
-          // English word — skip very common small words
           if (p.length <= 2 || SKIP_WORDS.has(p.toLowerCase())) {
             html += escapeHTML(p);
           } else {
             html += '<span class="wlink wlink-en" onclick="event.stopPropagation();app.lookupWord(\'' + safeQuote(p) + '\')">' + escapeHTML(p) + '</span>';
           }
         } else if (/^\[/.test(p)) {
-          // Bracketed pinyin — style but don't link
-          html += '<span class="wlink-py">' + escapeHTML(p) + '</span>';
+          html += '<span class="wlink-py">' + escapeHTML(pinyinTone(p.slice(1, -1))) + '</span>';
         } else {
           html += escapeHTML(p);
         }
@@ -111,7 +139,6 @@
       return html;
     }
 
-    // Fully optimized search function — handles both zh-en and en-zh entries
     function searchDB(q) {
       if (!q || !q.trim() || !DICTIONARY.length) return [];
       const n = norm(q);
@@ -124,32 +151,32 @@
         const w = DICTIONARY[i];
         let s = 0;
         
-        // Use pre-computed properties for massive speed boost
         if (w._enLow === n || w.chinese_traditional === n || w._pyNorm === n || w._pyJoined === n || w.chinese_simplified === n) {
             s = 100;
         } else if (w._enLow.startsWith(n) || (w._pyJoined && w._pyJoined.startsWith(n))) {
             s = 80;
         } else if (w.chinese_traditional && w.chinese_traditional.includes(n) || (w.chinese_simplified && w.chinese_simplified.includes(n))) {
             s = 70;
-        } else if (n.length > 2 && (w._defsNorm.includes(n) || (w._zhTransNorm && w._zhTransNorm.includes(n)))) {
-            // Search across both English definitions and Chinese translations
-            s = 60; 
+        } else if (n.length > 2) {
+            if ((" " + w._defsNorm + " ").includes(" " + n + " ") || (" " + w._zhTransNorm + " ").includes(" " + n + " ")) {
+                s = 90;
+            } else if (w._defsNorm.includes(n) || (w._zhTransNorm && w._zhTransNorm.includes(n))) {
+                s = 60;
+            }
         }
 
         if (s > 0) {
-            // Build subtitle based on entry type
             let sub;
             if (w._type === "en-zh") {
                 sub = w.zh_trans.length > 0 ? w.zh_trans[0] : w.english_word;
                 if (w.phonetic_en) sub = w.phonetic_en + ' · ' + sub;
             } else {
-                sub = (w.chinese_traditional || "") + ' · ' + (w.pinyin || "");
+                sub = (w.chinese_traditional || "") + ' · ' + pinyinTone(w.pinyin || "");
             }
             results.push({ type: "word", data: w, score: s, label: w.english_word, sub: sub });
             matchCount++;
         }
 
-        // Safety valve
         if (matchCount > 500) break;
       }
 
@@ -172,10 +199,18 @@
         focused: false,
         showHistorySettings: false,
         isLoaded: false,
-        detailTab: "cn"
+        detailTab: "cn",
+        navStack: [],
+        enDict: null,
+        enDictLoading: false,
+        enDictWord: "",
+        enDictTranslations: {},   // New state to hold translated definitions
+        zhApiTrans: null,         
+        zhApiTransLoading: false
       },
       toastTimeout: null,
       searchTimeout: null,
+      enDictCache: {},
 
       async init() {
         const root = document.getElementById('root');
@@ -189,11 +224,9 @@
         `;
 
         try {
-          // ── Load the unified JSONL dictionary ──
           const response = await fetch('dictionary.jsonl');
           if (!response.ok) throw new Error("Could not find dictionary.jsonl");
           const text = await response.text();
-          
           const lines = text.split('\n');
 
           await new Promise((resolve) => {
@@ -210,12 +243,9 @@
                 let entry;
                 try {
                   entry = JSON.parse(line);
-                } catch (e) {
-                  continue; // Skip malformed lines
-                }
+                } catch (e) { continue; }
 
                 if (entry.type === "zh-en") {
-                  // ── CC-CEDICT entry (Chinese → English) ──
                   const en_word = entry.en || entry.zh_trad;
                   const en_norm = norm(en_word);
                   const defs_norm = norm((entry.defs || []).join(" "));
@@ -248,14 +278,12 @@
                   });
 
                 } else if (entry.type === "en-zh") {
-                  // ── ECDICT entry (English → Chinese) ──
                   const en_word = entry.en || "";
                   const en_norm = norm(en_word);
                   const zh_trans = entry.zh_trans || [];
                   const defs_norm = norm((entry.defs || []).join(" "));
                   const zh_trans_norm = norm(zh_trans.join(" "));
 
-                  // Build definitions: English defs first, then Chinese translations
                   const definitions = [];
                   if (entry.defs && entry.defs[0]) {
                     definitions.push({ pos: "", text: entry.defs[0], example_en: "", example_zh: "" });
@@ -264,7 +292,6 @@
                     definitions.push({ pos: "", text: t, example_en: "", example_zh: "" });
                   });
 
-                  // Extract a display Chinese string from zh_trans
                   var displayZh = "";
                   if (zh_trans.length > 0) {
                     displayZh = zh_trans.map(function(t) { return t.replace(/^[a-z]+\.\s*/i, ""); }).join("; ");
@@ -311,8 +338,6 @@
             processChunk();
           });
           
-          console.log('Successfully loaded dictionary.jsonl! Total entries: ' + DICTIONARY.length);
-
         } catch (err) {
             console.error(err);
             root.innerHTML = '<div style="padding:20px; text-align:center; color:red; font-family:sans-serif;">Error loading dictionary. Ensure \'dictionary.jsonl\' is in the same folder and you are running a local web server (e.g., python -m http.server).</div>';
@@ -321,7 +346,6 @@
 
         this.state.isLoaded = true;
 
-        // Preload speech synthesis voices (Chrome loads them async)
         if (window.speechSynthesis) {
           window.speechSynthesis.getVoices();
           if (window.speechSynthesis.onvoiceschanged !== undefined) {
@@ -413,7 +437,22 @@
         this.state.sel = null;
         this.state.wiki = false;
         this.state.focused = false;
+        this.state.navStack = [];
         this.render();
+      },
+
+      goBack: function() {
+        if (this.state.navStack.length > 0) {
+          var prev = this.state.navStack.pop();
+          this.state.sel = prev;
+          this.state.view = "detail";
+          this.state.wiki = false;
+          this.state.detailTab = "cn";
+          this.render();
+          window.scrollTo(0, 0);
+        } else {
+          this.goHome();
+        }
       },
 
       addHistory: function(type, label, sub, wordId) {
@@ -423,6 +462,10 @@
       },
 
       openWord: function(w) {
+        if (this.state.view === "detail" && this.state.sel && this.state.sel.id !== w.id) {
+          this.state.navStack.push(this.state.sel);
+          if (this.state.navStack.length > 50) this.state.navStack.shift();
+        }
         this.state.sel = w;
         this.state.view = "detail";
         this.state.query = "";
@@ -430,15 +473,39 @@
         this.state.wiki = false;
         this.state.focused = false;
         this.state.detailTab = "cn";
-        var sub = w._type === "en-zh"
-          ? (w.phonetic_en ? w.phonetic_en : (w.zh_trans[0] || ""))
-          : (w.chinese_traditional + ' · ' + w.pinyin);
+        
+        // Reset dynamic API states
+        this.state.enDict = null;
+        this.state.enDictLoading = false;
+        this.state.enDictWord = "";
+        this.state.enDictTranslations = {};
+        this.state.zhApiTrans = null;
+        this.state.zhApiTransLoading = false;
+        
+        var sub = (w._type === "en-zh" || w._type === "api-only")
+          ? (w.phonetic_en ? w.phonetic_en : ((w.zh_trans && w.zh_trans.length > 0) ? w.zh_trans[0] : ""))
+          : (w.chinese_traditional + ' · ' + pinyinTone(w.pinyin));
+          
         this.addHistory("word", w.english_word, sub, w.id);
         this.render();
+        window.scrollTo(0, 0);
+        
+        this.fetchEnDict(w.english_word);
+        if (w._type === "api-only") {
+          this.fetchZhTrans(w.english_word);
+        }
       },
 
       openWordById: function(id) {
-        var w = DICTIONARY.find(function(x) { return x.id === id; });
+        var w = DICTIONARY.find(function(x) { return x.id == id; }) || this.state.favs.find(function(x) { return x.id == id; });
+        if (!w && String(id).startsWith('api_')) {
+          var word = String(id).substring(4);
+          w = {
+            id: id, _type: "api-only", english_word: word, chinese_traditional: "", chinese_simplified: "",
+            pinyin: "", phonetic_en: "", part_of_speech: [], definitions: [], synonyms: [], antonyms: [],
+            idioms: [], zh_trans: [], exchange: "", related_words: searchDB(word).slice(0, 5)
+          };
+        }
         if(w) this.openWord(w);
       },
 
@@ -449,24 +516,23 @@
 
       openFromHistory: function(idx) {
         var h = this.state.history[idx];
-        var w = DICTIONARY.find(function(d) { return d.id === h.wordId; });
-        if (w) this.openWord(w);
+        this.openWordById(h.wordId);
       },
       
       openFromIdiomIndex: function(wordId, index) {
-        var w = DICTIONARY.find(function(x) { return x.id === wordId; });
+        var w = DICTIONARY.find(function(x) { return x.id == wordId; });
         if (w && w.idioms && w.idioms[index]) {
             this.flash('Selected Idiom: ' + w.idioms[index].en);
         }
       },
 
-      isFav: function(id) { return this.state.favs.some(function(f) { return f.id === id; }); },
+      isFav: function(id) { return this.state.favs.some(function(f) { return f.id == id; }); },
 
       toggleFav: function(id) {
-        var w = DICTIONARY.find(function(x) { return x.id === id; }) || this.state.sel;
+        var w = DICTIONARY.find(function(x) { return x.id == id; }) || this.state.sel;
         var isCurrentlyFav = this.isFav(id);
         if (isCurrentlyFav) {
-          this.state.favs = this.state.favs.filter(function(x) { return x.id !== id; });
+          this.state.favs = this.state.favs.filter(function(x) { return x.id != id; });
           this.flash("Removed from favorites");
         } else {
           var copy = {};
@@ -497,10 +563,8 @@
         u.onerror = function() { if (btnElement) btnElement.classList.remove('sp'); };
 
         if (lang === "zh") {
-          // Try to find the best available Chinese voice
           var voices = window.speechSynthesis.getVoices();
           var zhVoice = null;
-          // Priority: zh-TW > zh-CN > zh-HK > any zh
           var prefs = ["zh-CN", "zh-TW", "zh-HK", "zh"];
           for (var p = 0; p < prefs.length && !zhVoice; p++) {
             for (var v = 0; v < voices.length; v++) {
@@ -521,22 +585,14 @@
         window.speechSynthesis.speak(u);
       },
 
-      toggleWiki: function() {
-        this.state.wiki = !this.state.wiki;
-        var btn = document.getElementById('wiki-btn');
-        if (btn) btn.className = 'abtn ' + (this.state.wiki ? 'on' : '');
-        var container = document.getElementById('wiki-container');
-        if (container) container.innerHTML = this.buildWikiHTML();
-      },
-
       copyWord: function(id) {
-        var w = DICTIONARY.find(function(x) { return x.id === id; });
+        var w = DICTIONARY.find(function(x) { return x.id == id; }) || this.state.sel;
         if (!w) return;
         var text;
-        if (w._type === "en-zh") {
-          text = w.english_word + (w.phonetic_en ? ' ' + w.phonetic_en : '') + ' — ' + w.zh_trans.join('; ');
+        if (w._type === "en-zh" || w._type === "api-only") {
+          text = w.english_word + (w.phonetic_en ? ' ' + w.phonetic_en : '') + (w.zh_trans && w.zh_trans.length ? ' — ' + w.zh_trans.join('; ') : '');
         } else {
-          text = w.english_word + ' (' + w.chinese_traditional + ') — ' + w.pinyin;
+          text = w.english_word + ' (' + w.chinese_traditional + ') — ' + pinyinTone(w.pinyin);
         }
         if (navigator.clipboard) {
           navigator.clipboard.writeText(text);
@@ -544,35 +600,269 @@
         }
       },
 
+      fetchZhTrans: function(word) {
+        if (!word) return;
+        var clean = word.trim();
+        this.state.zhApiTransLoading = true;
+        this.state.zhApiTrans = null;
+        var c = document.getElementById('zhtrans-container');
+        if (c) c.innerHTML = this.buildZhTransHTML();
+        
+        var self = this;
+        var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-TW&dt=t&q=' + encodeURIComponent(clean);
+        
+        fetch(url)
+          .then(function(r) { return r.ok ? r.json() : Promise.reject('failed'); })
+          .then(function(data) {
+            if (data && data[0] && data[0][0] && data[0][0][0]) {
+              var trans = data[0][0][0];
+              if (trans.toLowerCase() !== clean.toLowerCase()) {
+                self.state.zhApiTrans = trans;
+              }
+            }
+            self.state.zhApiTransLoading = false;
+            var c = document.getElementById('zhtrans-container');
+            if (c) c.innerHTML = self.buildZhTransHTML();
+          })
+          .catch(function() {
+            self.state.zhApiTransLoading = false;
+            var c = document.getElementById('zhtrans-container');
+            if (c) c.innerHTML = self.buildZhTransHTML();
+          });
+      },
+
+      buildZhTransHTML: function() {
+        var s = this.state;
+        if (s.zhApiTransLoading) {
+          return '<div class="ds af d1"><div class="dst">🌐 Web Translation</div><div style="padding:16px;text-align:center;color:var(--ink-m);font-size:13px">Fetching translation…</div></div>';
+        }
+        if (s.zhApiTrans) {
+          return '<div class="ds af d1"><div class="dst">🌐 Web Translation</div><div class="ic"><div class="ic-line"><span class="ic-line-text ic-zh">' + escapeHTML(s.zhApiTrans) + '</span>' + spkBtn(s.zhApiTrans, 'zh') + '</div></div></div>';
+        }
+        return '';
+      },
+
+      // --- New function to translate dictionary definitions into Chinese ---
+      translateEnDefs: function(dictData) {
+        if (!dictData || !dictData.meanings) return;
+        var defsToTranslate = [];
+        
+        // Gather the first few definitions so we don't hit URL length limits
+        dictData.meanings.forEach(function(m) {
+          if (m.definitions) {
+            m.definitions.forEach(function(d) {
+              if (d.definition && defsToTranslate.length < 8) {
+                defsToTranslate.push(d.definition);
+              }
+            });
+          }
+        });
+
+        if (defsToTranslate.length === 0) return;
+
+        // Join definitions with double newline to keep them separate in Google Translate
+        var joinedText = defsToTranslate.join('\n\n');
+        var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-TW&dt=t&q=' + encodeURIComponent(joinedText);
+        var self = this;
+
+        fetch(url)
+          .then(function(r) { return r.ok ? r.json() : Promise.reject('failed'); })
+          .then(function(data) {
+            if (data && data[0]) {
+              // Reconstruct the translated chunk
+              var translatedFull = data[0].map(function(item) { return item[0]; }).join('');
+              var translatedArray = translatedFull.split(/\n\n/);
+              
+              // Map back to original definitions
+              defsToTranslate.forEach(function(original, idx) {
+                if (translatedArray[idx]) {
+                  self.state.enDictTranslations[original] = translatedArray[idx].trim();
+                }
+              });
+              
+              // Force re-render of dictionary block to show new Chinese definitions
+              var c = document.getElementById('endict-container');
+              if (c) c.innerHTML = self.buildEnDictHTML();
+            }
+          })
+          .catch(function(e) { console.error("Definition translation failed", e); });
+      },
+
+      fetchEnDict: function(word) {
+        if (!word) return;
+        var clean = word.toLowerCase().trim().replace(/[^a-z'-]/g, '');
+        if (!clean || clean.length < 2) return;
+        if (this.enDictCache[clean]) {
+          this.state.enDict = this.enDictCache[clean];
+          this.state.enDictWord = clean;
+          this.state.enDictLoading = false;
+          var c = document.getElementById('endict-container');
+          if (c) c.innerHTML = this.buildEnDictHTML();
+          
+          // Trigger translation of definitions if not already cached
+          if (Object.keys(this.state.enDictTranslations).length === 0) {
+             this.translateEnDefs(this.state.enDict);
+          }
+          return;
+        }
+        this.state.enDictLoading = true;
+        this.state.enDictWord = clean;
+        this.state.enDict = null;
+        var c = document.getElementById('endict-container');
+        if (c) c.innerHTML = this.buildEnDictHTML();
+        var self = this;
+        fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(clean))
+          .then(function(r) { return r.ok ? r.json() : Promise.reject('not found'); })
+          .then(function(data) {
+            if (data && data.length > 0) {
+              self.enDictCache[clean] = data[0];
+              self.state.enDict = data[0];
+              // Fire off translation fetcher
+              self.translateEnDefs(data[0]);
+            } else {
+              self.enDictCache[clean] = null;
+              self.state.enDict = null;
+            }
+            self.state.enDictLoading = false;
+            var c = document.getElementById('endict-container');
+            if (c) c.innerHTML = self.buildEnDictHTML();
+          })
+          .catch(function() {
+            self.enDictCache[clean] = null;
+            self.state.enDict = null;
+            self.state.enDictLoading = false;
+            var c = document.getElementById('endict-container');
+            if (c) c.innerHTML = self.buildEnDictHTML();
+          });
+      },
+
+      buildEnDictHTML: function() {
+        var s = this.state;
+        if (s.enDictLoading) {
+          return '<div class="ds af"><div class="dst">📖 English Dictionary</div><div style="padding:16px;text-align:center;color:var(--ink-m);font-size:13px">Loading definition…</div></div>';
+        }
+        if (!s.enDict) return '';
+        var d = s.enDict;
+        var html = '<div class="ds af"><div class="dst">📖 English Dictionary</div>';
+        var phText = '';
+        if (d.phonetics && d.phonetics.length > 0) {
+          for (var i = 0; i < d.phonetics.length; i++) {
+            if (d.phonetics[i].text) { phText = d.phonetics[i].text; break; }
+          }
+        }
+        if (d.phonetic) phText = d.phonetic;
+        if (phText) {
+          html += '<div style="margin-bottom:16px"><span class="ph" style="font-size:calc(15px * var(--sc))">' + escapeHTML(phText) + '</span>';
+          var audioUrl = '';
+          if (d.phonetics) {
+            for (var i = 0; i < d.phonetics.length; i++) {
+              if (d.phonetics[i].audio) { audioUrl = d.phonetics[i].audio; break; }
+            }
+          }
+          if (audioUrl) {
+            html += ' <button class="spk" onclick="event.stopPropagation();var a=new Audio(\'' + escapeHTML(audioUrl) + '\');a.play()" title="Listen">' + I.SpeakerMini + '</button>';
+          }
+          html += '</div>';
+        }
+        if (d.meanings && d.meanings.length > 0) {
+          d.meanings.forEach(function(m) {
+            html += '<div class="pos-group">';
+            if (m.partOfSpeech) {
+              html += '<div class="pos-label">' + escapeHTML(m.partOfSpeech) + '</div>';
+            }
+            html += '<div class="pos-defs">';
+            var defs = m.definitions || [];
+            var maxDefs = Math.min(defs.length, 5);
+            for (var i = 0; i < maxDefs; i++) {
+              var def = defs[i];
+              html += '<div class="endict-def">';
+              html += '<span class="pos-def-num">' + (i + 1) + '</span>';
+              html += '<div class="endict-def-body">';
+              html += '<div class="endict-def-text">' + linkify(def.definition || '') + '</div>';
+              
+              // INJECT CHINESE TRANSLATION HERE if available
+              if (s.enDictTranslations && s.enDictTranslations[def.definition]) {
+                html += '<div style="font-family:var(--font-zh); font-size:calc(var(--fs) - 1px); color:var(--accent); margin-top:4px; line-height:1.5;">' + escapeHTML(s.enDictTranslations[def.definition]) + '</div>';
+              }
+
+              if (def.example) {
+                html += '<div class="endict-example">"' + escapeHTML(def.example) + '"</div>';
+              }
+              if (def.synonyms && def.synonyms.length > 0) {
+                html += '<div class="endict-syn">' + def.synonyms.slice(0, 5).map(function(sy) {
+                  return '<span class="tag ts" onclick="app.lookupWord(\'' + safeQuote(sy) + '\')">' + escapeHTML(sy) + '</span>';
+                }).join('') + '</div>';
+              }
+              html += '</div></div>';
+            }
+            if (defs.length > 5) {
+              html += '<div style="padding:4px 0 8px 28px;font-size:12px;color:var(--ink-m)">+ ' + (defs.length - 5) + ' more definitions</div>';
+            }
+            html += '</div></div>';
+          });
+        }
+        if (d.sourceUrls && d.sourceUrls.length > 0) {
+          html += '<div style="font-size:11px;color:var(--ink-m);margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">Source: <a href="' + escapeHTML(d.sourceUrls[0]) + '" target="_blank" style="color:var(--accent)">' + escapeHTML(d.sourceUrls[0]) + '</a></div>';
+        }
+        html += '</div>';
+        return html;
+      },
+
       tagClick: function(tag) {
-        var f = DICTIONARY.find(function(w) { return w.english_word.toLowerCase() === tag.toLowerCase(); });
-        if (f) this.openWord(f);
-        else this.flash('"' + tag + '" not found in current dictionary');
+        this.lookupWord(tag);
       },
 
       lookupWord: function(term) {
         if (!term || !term.trim()) return;
         var t = term.trim();
         var tLow = t.toLowerCase();
-        // 1. Exact match on english_word
+        var isEnglish = /^[a-zA-Z'-]+$/.test(t);
+        
+        // 1. Exact match on English headword
         var match = DICTIONARY.find(function(w) { return w._enLow === tLow; });
-        // 2. Exact match on chinese_traditional or chinese_simplified
+        
+        // 2. Exact match on Chinese
         if (!match) match = DICTIONARY.find(function(w) { return w.chinese_traditional === t || w.chinese_simplified === t; });
-        // 3. Partial: starts-with on english_word
+        
+        // 3. Partial match on English headword (e.g., clicking 'run' finds 'runs')
         if (!match) match = DICTIONARY.find(function(w) { return w._enLow.startsWith(tLow) && w._enLow.length < tLow.length + 4; });
-        // 4. Check if the character appears in any chinese_traditional field (single char lookup)
+        
+        // 4. Single Chinese character fallback
         if (!match && t.length === 1 && /[\u4e00-\u9fff]/.test(t)) {
           match = DICTIONARY.find(function(w) { return w.chinese_traditional && w.chinese_traditional.indexOf(t) !== -1 && w.chinese_traditional.length <= 2; });
           if (!match) match = DICTIONARY.find(function(w) { return w.chinese_traditional === t; });
         }
+
         if (match) {
           this.openWord(match);
+        } else if (isEnglish) {
+          // Because searchDB() still checks definitions, it will automatically find 
+          // "authority / 威權" and attach it to the Related Local Entries list!
+          var mockWord = {
+            id: 'api_' + tLow,
+            _type: "api-only",
+            english_word: tLow,
+            chinese_traditional: "",
+            chinese_simplified: "",
+            pinyin: "",
+            phonetic_en: "",
+            part_of_speech: [],
+            definitions: [],
+            synonyms: [],
+            antonyms: [],
+            idioms: [],
+            zh_trans: [],
+            exchange: "",
+            related_words: searchDB(tLow).slice(0, 5)
+          };
+          this.openWord(mockWord);
+          this.flash('Looking up "' + t + '" in Dictionary API…');
         } else {
-          // Fall back to a search
           this.state.view = "home";
           this.state.query = t;
           this.state.results = searchDB(t);
           this.state.focused = true;
+          this.state.navStack = [];
           this.render();
           var inp = document.getElementById('search-input');
           if (inp) { inp.value = t; inp.focus(); }
@@ -633,6 +923,7 @@
         this.state.view = v; 
         this.state.sel = null; 
         this.state.focused = false; 
+        this.state.navStack = [];
         this.render();
       },
 
@@ -656,7 +947,6 @@
         if (enPanel) enPanel.style.display = tab === 'en' ? 'block' : 'none';
       },
 
-      // Parse zh_trans items like ["n. 亲切的；和蔼的", "ad. 亲切地"] into POS-grouped structure
       parsePosGroups: function(zhTransList) {
         var groups = [];
         var groupMap = {};
@@ -666,7 +956,6 @@
           var match = item.match(posRegex);
           var pos = match ? match[1] : "";
           var text = match ? item.substring(match[0].length) : item;
-          // Split multiple definitions on Chinese semicolons and commas
           var defs = text.split(/[；;]/).map(function(s) { return s.trim(); }).filter(function(s) { return s; });
           if (pos && groupMap[pos] !== undefined) {
             groups[groupMap[pos]].defs = groups[groupMap[pos]].defs.concat(defs);
@@ -704,12 +993,6 @@
         return html;
       },
 
-      buildWikiHTML: function() {
-        if (!this.state.wiki || !this.state.sel) return "";
-        var sel = this.state.sel;
-        return '<div class="ws af" style="margin-top:24px;">' + (sel.wiki_thumb ? '<div class="wt"><img src="' + sel.wiki_thumb + '" alt="' + sel.english_word + '" onerror="this.parentElement.style.display=\'none\'"/><div class="wt-ov"></div></div>' : "") + '<div class="wb"><h4>' + I.Wiki + ' Wikipedia</h4><p class="wbtx">' + (sel.wiki_summary || 'No Wikipedia article linked for this entry.') + '</p><p class="wbn">Live lookup requires active internet connection.</p></div></div>';
-      },
-
       buildHistorySettingsHTML: function() {
         var s = this.state;
         if (!s.showHistorySettings) return "";
@@ -728,7 +1011,7 @@
       },
 
       getStaticCSS: function() {
-        return "@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');*{margin:0;padding:0;box-sizing:border-box}body{background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}.app{font-family:var(--font-sans);font-size:var(--fs);max-width:430px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative;overflow-x:hidden;border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);--font-serif:'Source Serif 4','Noto Serif TC',Georgia,serif;--font-sans:'DM Sans',-apple-system,sans-serif;--font-zh:'Noto Serif TC',serif;}@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes scaleIn{from{transform:scale(.97) translateY(-4px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}.af{animation:fadeUp .45s ease both}.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.hdr{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--paper);z-index:100}.hdr-brand{display:flex;align-items:baseline;gap:6px}.hdr-brand h1{font-family:var(--font-serif);font-size:14px;font-weight:700;color:var(--ink)}.hdr-brand .zh{font-family:var(--font-zh);color:var(--accent);font-size:13px;font-weight:600}.brand-full{font-family:var(--font-serif);font-size:calc(21px * var(--sc));font-weight:700;letter-spacing:-.4px;color:var(--ink);line-height:1.2}.brand-full .dr{color:var(--accent)}.hdr-back{display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--accent);cursor:pointer;font-family:var(--font-sans);font-size:15px;font-weight:500;padding:4px 0}.sw{padding:16px 20px;position:relative}.sb{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:12px 16px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.06)}.sb:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--ag),0 4px 12px rgba(0,0,0,.08)}.sb input{flex:1;border:none;outline:none;font-family:var(--font-sans);font-size:var(--fs);color:var(--ink);background:transparent}.sb input::placeholder{color:var(--ink-m)}.sb .si{color:var(--ink-m);flex-shrink:0}.sc{background:none;border:none;color:var(--ink-m);cursor:pointer;padding:2px;display:flex;align-items:center}.dd{position:absolute;top:72px;left:20px;right:20px;background:var(--card);border:1px solid var(--bdr);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.1);z-index:200;overflow:hidden;animation:scaleIn .2s ease;max-height:360px;overflow-y:auto}.dd-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 6px;border-bottom:1px solid var(--bdr)}.dd-hdr span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink-m);display:flex;align-items:center;gap:5px}.dd-hdr button{font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--font-sans)}.di{padding:12px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .2s;border-bottom:1px solid var(--bdr);gap:8px}.di:last-child{border-bottom:none}.di:hover{background:var(--ag)}.di-en{font-family:var(--font-serif);font-size:var(--fs);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.di-zh{font-family:var(--font-zh);font-size:calc(var(--fs) - 2px);color:var(--ink-l);white-space:nowrap;flex-shrink:0}.di-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:4px;flex-shrink:0}.di-tag-idiom{background:var(--gs);color:var(--gold)}.di-tag-word{background:var(--ag);color:var(--accent)}.di-rm{background:none;border:none;color:var(--ink-m);cursor:pointer;padding:4px;display:flex;align-items:center;flex-shrink:0;opacity:0;transition:opacity .15s}.di:hover .di-rm{opacity:1}.di-rm:hover{color:var(--accent)}.wod{margin:4px 20px 20px;background:var(--wodGrad);border:1px solid var(--gs);border-radius:16px;padding:24px;position:relative;overflow:hidden;cursor:pointer;transition:all .3s}.wod:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.wod-l{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);margin-bottom:14px}.wod-w{font-family:var(--font-serif);font-size:calc(32px * var(--sc));font-weight:700;color:var(--ink);letter-spacing:-.5px;margin-bottom:4px}.wod-c{font-family:var(--font-zh);font-size:calc(22px * var(--sc));color:var(--ink-l);margin-bottom:10px}.wod-d{font-size:var(--fs);color:var(--ink-l);line-height:1.6}.qs{padding:0 20px 20px}.sl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-m);margin-bottom:12px}.qg{display:grid;grid-template-columns:1fr 1fr;gap:10px}.qc{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:16px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;height:100%}.qc:hover{border-color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.06);transform:translateY(-1px)}.qc-zh-title{font-family:var(--font-zh);font-size:calc(22px * var(--sc));font-weight:700;color:var(--ink);line-height:1.2}.qc-py{font-size:calc(13px * var(--sc));color:var(--accent);font-weight:500;margin:6px 0}.qc-en-def{font-family:var(--font-serif);font-size:calc(14px * var(--sc));color:var(--ink-m);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5}.dp{padding:0 20px 120px;animation:fadeIn .3s ease}.dh{padding:20px 0 8px}.dw{font-family:var(--font-serif);font-size:calc(40px * var(--sc));font-weight:900;color:var(--ink);letter-spacing:-1px;line-height:1.1}.dc{font-family:var(--font-zh);font-size:calc(28px * var(--sc));color:var(--ink-l);margin-top:4px}.dph{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}.ph{font-family:var(--font-serif);font-size:calc(15px * var(--sc));font-style:italic;color:var(--ink-m)}.py{font-size:calc(15px * var(--sc));color:var(--accent);font-weight:500}.pos{font-size:calc(12px * var(--sc));background:var(--pw);padding:3px 10px;border-radius:100px;color:var(--ink-m);font-weight:600}.ab{display:flex;gap:8px;margin:18px 0;flex-wrap:wrap}.abtn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:1.5px solid var(--bdr);border-radius:100px;background:var(--card);color:var(--ink-l);font-family:var(--font-sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}.abtn:hover{border-color:var(--accent);color:var(--accent);background:var(--ag)}.abtn.on{border-color:var(--accent);color:var(--accent);background:var(--ag)}.abtn.sp{animation:pulse .6s ease infinite;border-color:var(--accent);color:var(--accent)}.ds{margin-bottom:28px}.dst{font-family:var(--font-serif);font-size:calc(18px * var(--sc));font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:8px}.dst::after{content:'';flex:1;height:1px;background:var(--bdr)}.dfi{margin-bottom:18px}.dn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--pw);font-size:12px;font-weight:700;color:var(--ink-l);margin-right:10px;flex-shrink:0}.dpos{font-size:calc(13px * var(--sc));font-style:italic;color:var(--accent);font-weight:500;margin-right:6px}.dtx{font-size:var(--fs);color:var(--ink);line-height:1.6}.dex{margin-top:8px;padding:12px 16px;background:var(--pw);border-radius:8px;border-left:3px solid var(--accent)}.dex-en{font-size:calc(var(--fs) - 1px);color:var(--ink);font-style:italic;line-height:1.5}.dex-zh{font-family:var(--font-zh);font-size:calc(var(--fs) - 1px);color:var(--ink-l);margin-top:4px;line-height:1.5}.tg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.tag{padding:6px 14px;border-radius:100px;font-size:calc(13px * var(--sc));font-weight:500;cursor:pointer;transition:all .2s}.ts{background:var(--synBg);color:var(--synColor);border:1px solid var(--synBorder)}.ts:hover{filter:brightness(.95)}.ta{background:var(--antBg);color:var(--antColor);border:1px solid var(--antBorder)}.ta:hover{filter:brightness(.95)}.ic{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:16px;margin-bottom:10px;transition:all .2s}.ic:hover{box-shadow:0 1px 3px rgba(0,0,0,.06);border-color:var(--gs)}.ic-en{font-family:var(--font-serif);font-size:calc(15px * var(--sc));font-weight:600;font-style:italic;color:var(--ink);margin-bottom:4px}.ic-zh{font-family:var(--font-zh);font-size:calc(18px * var(--sc));color:var(--accent);margin-bottom:2px}.ic-py{font-size:calc(13px * var(--sc));color:var(--ink-m)}.ws{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:24px}.wt{width:100%;height:180px;overflow:hidden;background:var(--pd);position:relative}.wt img{width:100%;height:100%;object-fit:cover;display:block}.wt-ov{position:absolute;bottom:0;left:0;right:0;height:50px;background:linear-gradient(transparent,var(--card))}.wb{padding:16px 20px 20px}.wb h4{font-family:var(--font-serif);font-size:calc(16px * var(--sc));font-weight:600;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px}.wbtx{font-size:var(--fs);color:var(--ink-l);line-height:1.7}.wbn{font-size:11px;color:var(--ink-m);margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr)}.tb{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--tab);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--bdr);display:flex;justify-content:space-around;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:300}.tbn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px;background:none;border:none;cursor:pointer;color:var(--ink-m);transition:color .2s}.tbn.on{color:var(--accent)}.tbn span{font-size:11px;font-weight:600;letter-spacing:.3px}.fl{padding:10px 20px 120px}.fi{display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--card);border:1px solid var(--bdr);border-radius:8px;margin-bottom:10px;cursor:pointer;transition:all .2s}.fi:hover{border-color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.06)}.fi-i{flex:1}.fi-en{font-family:var(--font-serif);font-size:calc(18px * var(--sc));font-weight:600;color:var(--ink)}.fi-zh{font-family:var(--font-zh);font-size:calc(15px * var(--sc));color:var(--ink-m);margin-top:2px}.fi-a{display:flex;gap:8px}.fab{padding:8px;border-radius:50%;border:1px solid var(--bdr);background:var(--card);color:var(--ink-m);cursor:pointer;display:flex;align-items:center;transition:all .2s}.fab:hover{color:var(--accent);border-color:var(--accent)}.fab.dng:hover{color:#c0392b;border-color:#c0392b}.es{text-align:center;padding:60px 20px;color:var(--ink-m)}.es .em{font-size:48px;margin-bottom:12px}.es p{font-size:var(--fs);line-height:1.6}.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 20px;border-radius:100px;font-size:14px;font-weight:500;z-index:400;animation:fadeUp .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.15);white-space:nowrap}.copy{text-align:center;padding:24px 20px 80px;font-size:11px;color:var(--ink-m);letter-spacing:.3px;line-height:1.6}.sett{padding:20px 20px 120px;animation:fadeIn .3s ease}.sett h2{font-family:var(--font-serif);font-size:calc(28px * var(--sc));font-weight:700;letter-spacing:-.5px;color:var(--ink);margin-bottom:4px}.sett-sub{font-size:var(--fs);color:var(--ink-m);margin-bottom:28px}.sett-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-m);margin-bottom:14px}.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:32px}.theme-card{border:2px solid var(--bdr);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}.theme-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--ag)}.theme-check{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center}.theme-preview{height:40px;border-radius:6px;margin-bottom:10px;display:flex;gap:3px;overflow:hidden;border:1px solid rgba(0,0,0,.06)}.theme-preview div{flex:1;height:100%}.theme-name{font-weight:600;font-size:14px;color:var(--ink);display:flex;align-items:center;gap:6px}.fs-section{margin-bottom:32px}.fs-bar{display:flex;align-items:center;gap:0;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;overflow:hidden}.fs-btn{flex:1;padding:14px 0;text-align:center;font-family:var(--font-sans);font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink-l);transition:all .2s;border-right:1px solid var(--bdr);position:relative}.fs-btn:last-child{border-right:none}.fs-btn.sel{background:var(--accent);color:#fff}.fs-btn:hover:not(.sel){background:var(--ag)}.fs-preview{margin-top:14px;padding:16px;background:var(--pw);border-radius:8px;border-left:3px solid var(--accent)}.fs-preview-en{font-family:var(--font-serif);font-size:var(--fs);font-weight:600;color:var(--ink);margin-bottom:2px}.fs-preview-zh{font-family:var(--font-zh);font-size:var(--fs);color:var(--ink-l)}.hist-section{margin-bottom:32px}.hist-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden}.hist-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;cursor:pointer;transition:background .2s}.hist-header:hover{background:var(--ag)}.hist-header-left{display:flex;align-items:center;gap:10px}.hist-header-left .icon{color:var(--ink-m)}.hist-header-left .info h4{font-size:15px;font-weight:600;color:var(--ink)}.hist-header-left .info p{font-size:12px;color:var(--ink-m);margin-top:1px}.hist-chevron{color:var(--ink-m);transition:transform .2s;font-size:18px}.hist-chevron.open{transform:rotate(180deg)}.hist-body{border-top:1px solid var(--bdr);max-height:300px;overflow-y:auto}.hist-item{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--bdr);transition:background .15s}.hist-item:last-child{border-bottom:none}.hist-item:hover{background:var(--ag)}.hist-item-info{flex:1;min-width:0}.hist-item-label{font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hist-item-sub{font-size:12px;color:var(--ink-m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hist-clear{display:flex;align-items:center;justify-content:center;padding:12px;border-top:1px solid var(--bdr);cursor:pointer;font-size:13px;font-weight:600;color:var(--accent);transition:background .2s}.hist-clear:hover{background:var(--ag)}.about-section{padding:20px;background:var(--card);border:1px solid var(--bdr);border-radius:12px}.about-section h3{font-family:var(--font-serif);font-size:calc(16px * var(--sc));font-weight:600;color:var(--ink);margin-bottom:8px}.about-section p{font-size:calc(var(--fs) - 1px);color:var(--ink-l);line-height:1.6}.zh-trans-section{margin-top:12px;padding:16px;background:var(--pw);border-radius:10px;border-left:3px solid var(--gold)}.zh-trans-item{font-family:var(--font-zh);font-size:var(--fs);color:var(--ink);line-height:1.8;display:flex;align-items:center;gap:4px}.exchange-info{margin-top:16px;padding:12px 16px;background:var(--pw);border-radius:8px;font-size:calc(var(--fs) - 2px);color:var(--ink-l);line-height:1.6}.exchange-info strong{color:var(--ink);font-weight:600}.spk{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid var(--bdr);border-radius:50%;background:var(--card);color:var(--ink-m);cursor:pointer;transition:all .2s;vertical-align:middle;margin-left:4px;flex-shrink:0;padding:0;line-height:1}.spk:hover{color:var(--accent);border-color:var(--accent);background:var(--ag)}.spk.sp{animation:pulse .6s ease infinite;color:var(--accent);border-color:var(--accent)}.dfi-row{display:flex;align-items:flex-start;gap:0}.dfi-text-wrap{flex:1;min-width:0}.dfi-spk{flex-shrink:0;margin-top:2px;margin-left:6px}.dex-line{display:flex;align-items:center;gap:2px}.dex-line-text{flex:1;min-width:0}.ic-line{display:flex;align-items:center;gap:4px}.ic-line-text{flex:1;min-width:0}.wcard{background:var(--wodGrad);border:1px solid var(--gs);border-radius:16px;padding:28px 24px 20px;margin-bottom:20px;position:relative}.wcard-word{font-family:var(--font-serif);font-size:calc(38px * var(--sc));font-weight:900;color:var(--ink);letter-spacing:-1px;line-height:1.1}.wcard-zh{font-family:var(--font-zh);font-size:calc(26px * var(--sc));color:var(--ink-l);margin-top:6px}.wcard-ph{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}.wcard-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}.wcard-actions .abtn{background:rgba(255,255,255,0.6);backdrop-filter:blur(4px)}.dtab-bar{display:flex;background:var(--card);border:1.5px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:20px}.dtab{flex:1;padding:10px 0;text-align:center;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink-m);transition:all .2s;border-right:1px solid var(--bdr)}.dtab:last-child{border-right:none}.dtab-on{background:var(--accent);color:#fff}.dtab:hover:not(.dtab-on){background:var(--ag)}.pos-group{margin-bottom:20px}.pos-label{display:inline-block;font-size:calc(13px * var(--sc));font-weight:700;color:var(--accent);background:var(--ag);padding:3px 12px;border-radius:6px;margin-bottom:10px;font-style:italic;letter-spacing:.3px}.pos-defs{padding-left:4px}.pos-def-item{display:flex;align-items:flex-start;gap:0;margin-bottom:6px;line-height:1.6}.pos-def-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--pw);font-size:11px;font-weight:700;color:var(--ink-l);margin-right:8px;flex-shrink:0;margin-top:2px}.pos-def-text{font-family:var(--font-zh);font-size:var(--fs);color:var(--ink);flex:1;min-width:0}.wlink{cursor:pointer;transition:all .15s;border-radius:3px;position:relative}.wlink:hover{background:var(--ag)}.wlink-zh{color:var(--accent);font-family:var(--font-zh);border-bottom:1.5px dotted var(--accent);padding:0 1px}.wlink-zh:hover{background:var(--ag);color:var(--accent)}.wlink-en{color:var(--ink);border-bottom:1px dotted var(--ink-m);padding:0 1px}.wlink-en:hover{color:var(--accent);border-bottom-color:var(--accent)}.wlink-py{font-size:0.9em;color:var(--ink-m);font-style:italic}.dtx .wlink-zh{font-size:inherit}.dtx .wlink-en{font-size:inherit}";
+        return "@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');*{margin:0;padding:0;box-sizing:border-box}body{background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}.app{font-family:var(--font-sans);font-size:var(--fs);max-width:430px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative;overflow-x:hidden;border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);--font-serif:'Source Serif 4','Noto Serif TC',Georgia,serif;--font-sans:'DM Sans',-apple-system,sans-serif;--font-zh:'Noto Serif TC',serif;}@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes scaleIn{from{transform:scale(.97) translateY(-4px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}.af{animation:fadeUp .45s ease both}.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.hdr{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--paper);z-index:100}.hdr-brand{display:flex;align-items:baseline;gap:6px}.hdr-brand h1{font-family:var(--font-serif);font-size:14px;font-weight:700;color:var(--ink)}.hdr-brand .zh{font-family:var(--font-zh);color:var(--accent);font-size:13px;font-weight:600}.brand-full{font-family:var(--font-serif);font-size:calc(21px * var(--sc));font-weight:700;letter-spacing:-.4px;color:var(--ink);line-height:1.2}.brand-full .dr{color:var(--accent)}.hdr-back{display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--accent);cursor:pointer;font-family:var(--font-sans);font-size:15px;font-weight:500;padding:4px 0}.sw{padding:16px 20px;position:relative}.sb{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:12px 16px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.06)}.sb:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--ag),0 4px 12px rgba(0,0,0,.08)}.sb input{flex:1;border:none;outline:none;font-family:var(--font-sans);font-size:var(--fs);color:var(--ink);background:transparent}.sb input::placeholder{color:var(--ink-m)}.sb .si{color:var(--ink-m);flex-shrink:0}.sc{background:none;border:none;color:var(--ink-m);cursor:pointer;padding:2px;display:flex;align-items:center}.dd{position:absolute;top:72px;left:20px;right:20px;background:var(--card);border:1px solid var(--bdr);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.1);z-index:200;overflow:hidden;animation:scaleIn .2s ease;max-height:360px;overflow-y:auto}.dd-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 6px;border-bottom:1px solid var(--bdr)}.dd-hdr span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink-m);display:flex;align-items:center;gap:5px}.dd-hdr button{font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--font-sans)}.di{padding:12px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .2s;border-bottom:1px solid var(--bdr);gap:8px}.di:last-child{border-bottom:none}.di:hover{background:var(--ag)}.di-en{font-family:var(--font-serif);font-size:var(--fs);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.di-zh{font-family:var(--font-zh);font-size:calc(var(--fs) - 2px);color:var(--ink-l);white-space:nowrap;flex-shrink:0}.di-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:4px;flex-shrink:0}.di-tag-idiom{background:var(--gs);color:var(--gold)}.di-tag-word{background:var(--ag);color:var(--accent)}.di-rm{background:none;border:none;color:var(--ink-m);cursor:pointer;padding:4px;display:flex;align-items:center;flex-shrink:0;opacity:0;transition:opacity .15s}.di:hover .di-rm{opacity:1}.di-rm:hover{color:var(--accent)}.wod{margin:4px 20px 20px;background:var(--wodGrad);border:1px solid var(--gs);border-radius:16px;padding:24px;position:relative;overflow:hidden;cursor:pointer;transition:all .3s}.wod:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.wod-l{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);margin-bottom:14px}.wod-w{font-family:var(--font-serif);font-size:calc(32px * var(--sc));font-weight:700;color:var(--ink);letter-spacing:-.5px;margin-bottom:4px}.wod-c{font-family:var(--font-zh);font-size:calc(22px * var(--sc));color:var(--ink-l);margin-bottom:10px}.wod-d{font-size:var(--fs);color:var(--ink-l);line-height:1.6}.qs{padding:0 20px 20px}.sl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-m);margin-bottom:12px}.qg{display:grid;grid-template-columns:1fr 1fr;gap:10px}.qc{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:16px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;height:100%}.qc:hover{border-color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.06);transform:translateY(-1px)}.qc-zh-title{font-family:var(--font-zh);font-size:calc(22px * var(--sc));font-weight:700;color:var(--ink);line-height:1.2}.qc-py{font-size:calc(13px * var(--sc));color:var(--accent);font-weight:500;margin:6px 0}.qc-en-def{font-family:var(--font-serif);font-size:calc(14px * var(--sc));color:var(--ink-m);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5}.dp{padding:0 20px 120px;animation:fadeIn .3s ease}.dh{padding:20px 0 8px}.dw{font-family:var(--font-serif);font-size:calc(40px * var(--sc));font-weight:900;color:var(--ink);letter-spacing:-1px;line-height:1.1}.dc{font-family:var(--font-zh);font-size:calc(28px * var(--sc));color:var(--ink-l);margin-top:4px}.dph{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}.ph{font-family:var(--font-serif);font-size:calc(15px * var(--sc));font-style:italic;color:var(--ink-m)}.py{font-size:calc(15px * var(--sc));color:var(--accent);font-weight:500}.pos{font-size:calc(12px * var(--sc));background:var(--pw);padding:3px 10px;border-radius:100px;color:var(--ink-m);font-weight:600}.ab{display:flex;gap:8px;margin:18px 0;flex-wrap:wrap}.abtn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:1.5px solid var(--bdr);border-radius:100px;background:var(--card);color:var(--ink-l);font-family:var(--font-sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}.abtn:hover{border-color:var(--accent);color:var(--accent);background:var(--ag)}a.abtn{text-decoration:none}.abtn.on{border-color:var(--accent);color:var(--accent);background:var(--ag)}.abtn.sp{animation:pulse .6s ease infinite;border-color:var(--accent);color:var(--accent)}.ds{margin-bottom:28px}.dst{font-family:var(--font-serif);font-size:calc(18px * var(--sc));font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:8px}.dst::after{content:'';flex:1;height:1px;background:var(--bdr)}.dfi{margin-bottom:18px}.dn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--pw);font-size:12px;font-weight:700;color:var(--ink-l);margin-right:10px;flex-shrink:0}.dpos{font-size:calc(13px * var(--sc));font-style:italic;color:var(--accent);font-weight:500;margin-right:6px}.dtx{font-size:var(--fs);color:var(--ink);line-height:1.6}.dex{margin-top:8px;padding:12px 16px;background:var(--pw);border-radius:8px;border-left:3px solid var(--accent)}.dex-en{font-size:calc(var(--fs) - 1px);color:var(--ink);font-style:italic;line-height:1.5}.dex-zh{font-family:var(--font-zh);font-size:calc(var(--fs) - 1px);color:var(--ink-l);margin-top:4px;line-height:1.5}.tg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.tag{padding:6px 14px;border-radius:100px;font-size:calc(13px * var(--sc));font-weight:500;cursor:pointer;transition:all .2s}.ts{background:var(--synBg);color:var(--synColor);border:1px solid var(--synBorder)}.ts:hover{filter:brightness(.95)}.ta{background:var(--antBg);color:var(--antColor);border:1px solid var(--antBorder)}.ta:hover{filter:brightness(.95)}.ic{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:16px;margin-bottom:10px;transition:all .2s}.ic:hover{box-shadow:0 1px 3px rgba(0,0,0,.06);border-color:var(--gs)}.ic-en{font-family:var(--font-serif);font-size:calc(15px * var(--sc));font-weight:600;font-style:italic;color:var(--ink);margin-bottom:4px}.ic-zh{font-family:var(--font-zh);font-size:calc(18px * var(--sc));color:var(--accent);margin-bottom:2px}.ic-py{font-size:calc(13px * var(--sc));color:var(--ink-m)}.ws{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:24px}.wt{width:100%;height:180px;overflow:hidden;background:var(--pd);position:relative}.wt img{width:100%;height:100%;object-fit:cover;display:block}.wt-ov{position:absolute;bottom:0;left:0;right:0;height:50px;background:linear-gradient(transparent,var(--card))}.wb{padding:16px 20px 20px}.wb h4{font-family:var(--font-serif);font-size:calc(16px * var(--sc));font-weight:600;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px}.wbtx{font-size:var(--fs);color:var(--ink-l);line-height:1.7}.wbn{font-size:11px;color:var(--ink-m);margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr)}.tb{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--tab);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--bdr);display:flex;justify-content:space-around;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:300}.tbn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px;background:none;border:none;cursor:pointer;color:var(--ink-m);transition:color .2s}.tbn.on{color:var(--accent)}.tbn span{font-size:11px;font-weight:600;letter-spacing:.3px}.fl{padding:10px 20px 120px}.fi{display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--card);border:1px solid var(--bdr);border-radius:8px;margin-bottom:10px;cursor:pointer;transition:all .2s}.fi:hover{border-color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.06)}.fi-i{flex:1}.fi-en{font-family:var(--font-serif);font-size:calc(18px * var(--sc));font-weight:600;color:var(--ink)}.fi-zh{font-family:var(--font-zh);font-size:calc(15px * var(--sc));color:var(--ink-m);margin-top:2px}.fi-a{display:flex;gap:8px}.fab{padding:8px;border-radius:50%;border:1px solid var(--bdr);background:var(--card);color:var(--ink-m);cursor:pointer;display:flex;align-items:center;transition:all .2s}.fab:hover{color:var(--accent);border-color:var(--accent)}.fab.dng:hover{color:#c0392b;border-color:#c0392b}.es{text-align:center;padding:60px 20px;color:var(--ink-m)}.es .em{font-size:48px;margin-bottom:12px}.es p{font-size:var(--fs);line-height:1.6}.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 20px;border-radius:100px;font-size:14px;font-weight:500;z-index:400;animation:fadeUp .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.15);white-space:nowrap}.copy{text-align:center;padding:24px 20px 80px;font-size:11px;color:var(--ink-m);letter-spacing:.3px;line-height:1.6}.sett{padding:20px 20px 120px;animation:fadeIn .3s ease}.sett h2{font-family:var(--font-serif);font-size:calc(28px * var(--sc));font-weight:700;letter-spacing:-.5px;color:var(--ink);margin-bottom:4px}.sett-sub{font-size:var(--fs);color:var(--ink-m);margin-bottom:28px}.sett-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-m);margin-bottom:14px}.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:32px}.theme-card{border:2px solid var(--bdr);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}.theme-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--ag)}.theme-check{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center}.theme-preview{height:40px;border-radius:6px;margin-bottom:10px;display:flex;gap:3px;overflow:hidden;border:1px solid rgba(0,0,0,.06)}.theme-preview div{flex:1;height:100%}.theme-name{font-weight:600;font-size:14px;color:var(--ink);display:flex;align-items:center;gap:6px}.fs-section{margin-bottom:32px}.fs-bar{display:flex;align-items:center;gap:0;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;overflow:hidden}.fs-btn{flex:1;padding:14px 0;text-align:center;font-family:var(--font-sans);font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink-l);transition:all .2s;border-right:1px solid var(--bdr);position:relative}.fs-btn:last-child{border-right:none}.fs-btn.sel{background:var(--accent);color:#fff}.fs-btn:hover:not(.sel){background:var(--ag)}.fs-preview{margin-top:14px;padding:16px;background:var(--pw);border-radius:8px;border-left:3px solid var(--accent)}.fs-preview-en{font-family:var(--font-serif);font-size:var(--fs);font-weight:600;color:var(--ink);margin-bottom:2px}.fs-preview-zh{font-family:var(--font-zh);font-size:var(--fs);color:var(--ink-l)}.hist-section{margin-bottom:32px}.hist-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden}.hist-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;cursor:pointer;transition:background .2s}.hist-header:hover{background:var(--ag)}.hist-header-left{display:flex;align-items:center;gap:10px}.hist-header-left .icon{color:var(--ink-m)}.hist-header-left .info h4{font-size:15px;font-weight:600;color:var(--ink)}.hist-header-left .info p{font-size:12px;color:var(--ink-m);margin-top:1px}.hist-chevron{color:var(--ink-m);transition:transform .2s;font-size:18px}.hist-chevron.open{transform:rotate(180deg)}.hist-body{border-top:1px solid var(--bdr);max-height:300px;overflow-y:auto}.hist-item{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--bdr);transition:background .15s}.hist-item:last-child{border-bottom:none}.hist-item:hover{background:var(--ag)}.hist-item-info{flex:1;min-width:0}.hist-item-label{font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hist-item-sub{font-size:12px;color:var(--ink-m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hist-clear{display:flex;align-items:center;justify-content:center;padding:12px;border-top:1px solid var(--bdr);cursor:pointer;font-size:13px;font-weight:600;color:var(--accent);transition:background .2s}.hist-clear:hover{background:var(--ag)}.about-section{padding:20px;background:var(--card);border:1px solid var(--bdr);border-radius:12px}.about-section h3{font-family:var(--font-serif);font-size:calc(16px * var(--sc));font-weight:600;color:var(--ink);margin-bottom:8px}.about-section p{font-size:calc(var(--fs) - 1px);color:var(--ink-l);line-height:1.6}.zh-trans-section{margin-top:12px;padding:16px;background:var(--pw);border-radius:10px;border-left:3px solid var(--gold)}.zh-trans-item{font-family:var(--font-zh);font-size:var(--fs);color:var(--ink);line-height:1.8;display:flex;align-items:center;gap:4px}.exchange-info{margin-top:16px;padding:12px 16px;background:var(--pw);border-radius:8px;font-size:calc(var(--fs) - 2px);color:var(--ink-l);line-height:1.6}.exchange-info strong{color:var(--ink);font-weight:600}.spk{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid var(--bdr);border-radius:50%;background:var(--card);color:var(--ink-m);cursor:pointer;transition:all .2s;vertical-align:middle;margin-left:4px;flex-shrink:0;padding:0;line-height:1}.spk:hover{color:var(--accent);border-color:var(--accent);background:var(--ag)}.spk.sp{animation:pulse .6s ease infinite;color:var(--accent);border-color:var(--accent)}.dfi-row{display:flex;align-items:flex-start;gap:0}.dfi-text-wrap{flex:1;min-width:0}.dfi-spk{flex-shrink:0;margin-top:2px;margin-left:6px}.dex-line{display:flex;align-items:center;gap:2px}.dex-line-text{flex:1;min-width:0}.ic-line{display:flex;align-items:center;gap:4px}.ic-line-text{flex:1;min-width:0}.wcard{background:var(--wodGrad);border:1px solid var(--gs);border-radius:16px;padding:28px 24px 20px;margin-bottom:20px;position:relative}.wcard-word{font-family:var(--font-serif);font-size:calc(38px * var(--sc));font-weight:900;color:var(--ink);letter-spacing:-1px;line-height:1.1}.wcard-word-zh{font-family:var(--font-zh);font-size:calc(44px * var(--sc));letter-spacing:2px;line-height:1.2}.wcard-word-zh .wlink-zh{font-size:inherit;color:var(--ink);border-bottom:none}.wcard-word-zh .wlink-zh:hover{color:var(--accent);border-bottom:2px dotted var(--accent)}.wcard-simp{font-family:var(--font-zh);font-size:calc(22px * var(--sc));color:var(--ink-m);margin-top:4px}.wcard-simp .wlink-zh{font-size:inherit;color:var(--ink-m);border-bottom:none}.wcard-simp .wlink-zh:hover{color:var(--accent)}.wcard-py{font-size:calc(17px * var(--sc));color:var(--accent);font-weight:500;margin-top:8px;letter-spacing:.5px}.wcard-en-sub{font-family:var(--font-serif);font-size:calc(16px * var(--sc));color:var(--ink-l);margin-top:8px;line-height:1.5}.wcard-en-sub .wlink-en{font-size:inherit;color:var(--ink-l)}.wcard-en-sub .wlink-en:hover{color:var(--accent)}.wcard-ph{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}.wcard-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}.wcard-actions .abtn{background:rgba(255,255,255,0.6);backdrop-filter:blur(4px)}.dtab-bar{display:flex;background:var(--card);border:1.5px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:20px}.dtab{flex:1;padding:10px 0;text-align:center;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink-m);transition:all .2s;border-right:1px solid var(--bdr)}.dtab:last-child{border-right:none}.dtab-on{background:var(--accent);color:#fff}.dtab:hover:not(.dtab-on){background:var(--ag)}.pos-group{margin-bottom:20px}.pos-label{display:inline-block;font-size:calc(13px * var(--sc));font-weight:700;color:var(--accent);background:var(--ag);padding:3px 12px;border-radius:6px;margin-bottom:10px;font-style:italic;letter-spacing:.3px}.pos-defs{padding-left:4px}.pos-def-item{display:flex;align-items:flex-start;gap:0;margin-bottom:6px;line-height:1.6}.pos-def-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--pw);font-size:11px;font-weight:700;color:var(--ink-l);margin-right:8px;flex-shrink:0;margin-top:2px}.pos-def-text{font-family:var(--font-zh);font-size:var(--fs);color:var(--ink);flex:1;min-width:0}.wlink{cursor:pointer;transition:all .15s;border-radius:3px;position:relative}.wlink:hover{background:var(--ag)}.wlink-zh{color:var(--accent);font-family:var(--font-zh);border-bottom:1.5px dotted var(--accent);padding:0 1px}.wlink-zh:hover{background:var(--ag);color:var(--accent)}.wlink-en{color:var(--ink);border-bottom:1px dotted var(--ink-m);padding:0 1px}.wlink-en:hover{color:var(--accent);border-bottom-color:var(--accent)}.wlink-py{font-size:0.9em;color:var(--ink-m);font-style:italic}.dtx .wlink-zh{font-size:inherit}.dtx .wlink-en{font-size:inherit}.endict-def{display:flex;align-items:flex-start;gap:0;margin-bottom:14px}.endict-def-body{flex:1;min-width:0}.endict-def-text{font-family:var(--font-serif);font-size:var(--fs);color:var(--ink);line-height:1.6}.endict-example{font-size:calc(var(--fs) - 1px);color:var(--ink-l);font-style:italic;margin-top:6px;padding:8px 12px;background:var(--pw);border-radius:6px;border-left:3px solid var(--accent);line-height:1.5}.endict-syn{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}";
       },
 
       buildHTML: function() {
@@ -739,39 +1022,38 @@
 
         var html = '<div class="app" id="app-container" style="' + this.getCSSVars() + '">';
 
-        // HDR
         html += '<div class="hdr">';
         if (isDetail) {
-          html += '<button class="hdr-back" onclick="app.goHome()">' + I.Back + ' Back</button>';
-          html += '<div class="hdr-brand"><h1>Dr. T</h1><span class="zh">英中</span></div>';
+          var prevWord = s.navStack.length > 0 ? s.navStack[s.navStack.length - 1] : null;
+          var backLabel = prevWord ? (prevWord._type === 'zh-en' ? prevWord.chinese_traditional : prevWord.english_word) : 'Home';
+          if (backLabel.length > 8) backLabel = backLabel.substring(0, 8) + '…';
+          html += '<button class="hdr-back" onclick="app.goBack()">' + I.Back + ' ' + escapeHTML(backLabel) + '</button>';
+          html += '<div class="hdr-brand"><h1>Dr. 張簡</h1><span class="zh">英中</span></div>';
         } else {
-          html += '<div class="brand-full"><span class="dr">Dr. T</span> English-中文 Reference</div>';
+          html += '<div class="brand-full"><span class="dr">Dr. 張簡</span> English-中文 Reference</div>';
         }
         html += '</div>';
 
-        // Search Wrapper 
         if (s.view === "home" || s.view === "favorites") {
           html += '<div class="sw"><div class="sb" id="search-ref"><span class="si">' + I.Search + '</span><input id="search-input" placeholder="Search English, 中文, or Pinyin…" value="' + escapeHTML(s.query) + '" oninput="app.doSearch(this.value)" onfocus="app.setFocused(true)" autocomplete="off" /><div id="clear-btn-container" style="display:flex;align-items:center;">' + (s.query ? '<button class="sc" onclick="app.clearSearch()">' + I.X + '</button>' : "") + '</div></div><div id="dropdown-container">' + this.buildDropdownHTML() + '</div></div>';
         }
 
-        // Views
         if (s.view === "home") {
           html += '<div style="padding-bottom:20px">';
           
           if (wod) {
               var wodSub = wod._type === "en-zh"
                 ? (wod.phonetic_en ? wod.phonetic_en : (wod.zh_trans[0] || ""))
-                : ((wod.chinese_traditional || "") + ' · ' + (wod.pinyin || ""));
-              html += '<div class="wod af" onclick="app.openWordById(' + wod.id + ')"><div class="wod-l">' + I.Sparkle + ' Word of the Day</div><div class="wod-w">' + wod.english_word + '</div><div class="wod-c">' + wodSub + '</div><div class="wod-d">' + (wod.definitions[0] ? wod.definitions[0].text : '') + '</div></div>';
+                : ((wod.chinese_traditional || "") + ' · ' + pinyinTone(wod.pinyin || ""));
+              html += '<div class="wod af" onclick="app.openWordById(\'' + wod.id + '\')"><div class="wod-l">' + I.Sparkle + ' Word of the Day</div><div class="wod-w">' + wod.english_word + '</div><div class="wod-c">' + wodSub + '</div><div class="wod-d">' + (wod.definitions[0] ? wod.definitions[0].text : '') + '</div></div>';
           }
           
-          // Prefer zh-en entries for Explore cards
           var zhEnEntries = DICTIONARY.filter(function(w) { return w._type === "zh-en"; });
           var exploreEntries = zhEnEntries.length >= 10006 ? zhEnEntries.slice(10000, 10006) : DICTIONARY.slice(0, 6);
 
           html += '<div class="qs af d2"><div class="sl">Explore</div><div class="qg">';
           exploreEntries.forEach(function(w, i) {
-            html += '<div class="qc af d' + Math.min(i + 2, 4) + '" onclick="app.openWordById(' + w.id + ')"><div class="qc-zh-title">' + (w.chinese_traditional || w.english_word) + '</div><div class="qc-py">' + (w.pinyin || w.phonetic_en || '') + '</div><div class="qc-en-def">' + w.english_word + '</div></div>';
+            html += '<div class="qc af d' + Math.min(i + 2, 4) + '" onclick="app.openWordById(\'' + w.id + '\')"><div class="qc-zh-title">' + (w.chinese_traditional || w.english_word) + '</div><div class="qc-py">' + pinyinTone(w.pinyin || w.phonetic_en || '') + '</div><div class="qc-en-def">' + w.english_word + '</div></div>';
           });
           html += '</div></div><div class="copy">© 2026 TapTiger Development LLC. All rights reserved.</div></div>';
         }
@@ -779,46 +1061,53 @@
         if (s.view === "detail" && s.sel) {
           var sel = s.sel;
           var isEnZh = sel._type === "en-zh";
+          var isApiOnly = sel._type === "api-only";
           
           html += '<div class="dp">';
-
-          // ── WORD CARD ──
           html += '<div class="wcard af">';
-          html += '<div class="wcard-word">' + sel.english_word + '</div>';
-          if (!isEnZh) {
-            html += '<div class="wcard-zh">' + linkify(sel.chinese_traditional);
+          
+          if (!isEnZh && !isApiOnly) {
+            html += '<div class="wcard-word wcard-word-zh">' + linkify(sel.chinese_traditional) + '</div>';
             if (sel.chinese_simplified && sel.chinese_simplified !== sel.chinese_traditional) {
-              html += ' <span style="opacity:0.5;font-size:0.75em">(' + linkify(sel.chinese_simplified) + ')</span>';
+              html += '<div class="wcard-simp">' + linkify(sel.chinese_simplified) + '</div>';
             }
-            html += '</div>';
+            html += '<div class="wcard-py">' + pinyinTone(sel.pinyin) + '</div>';
+            html += '<div class="wcard-en-sub">' + linkify(sel.english_word) + '</div>';
+          } else {
+            html += '<div class="wcard-word">' + sel.english_word + '</div>';
+            if (sel.phonetic_en) html += '<div class="wcard-ph"><span class="ph">' + sel.phonetic_en + '</span></div>';
           }
-          html += '<div class="wcard-ph">';
-          if (sel.phonetic_en) html += '<span class="ph">' + sel.phonetic_en + '</span>';
-          if (!isEnZh && sel.pinyin) html += '<span class="py">' + sel.pinyin + '</span>';
-          html += '</div>';
 
-          // Action buttons row inside the card
           html += '<div class="wcard-actions">';
-          html += '<button class="abtn" onclick="app.speak(\'' + safeQuote(sel.english_word) + '\', \'en\', this)">' + I.Speaker + ' English</button>';
-          if (!isEnZh && sel.chinese_traditional) {
+          if (!isEnZh && !isApiOnly && sel.chinese_traditional) {
             html += '<button class="abtn" onclick="app.speak(\'' + safeQuote(sel.chinese_traditional) + '\', \'zh\', this)">' + I.Speaker + ' 中文</button>';
           }
-          html += '<button class="abtn" onclick="app.copyWord(' + sel.id + ')">' + I.Copy + '</button>';
-          html += '<button id="star-btn-' + sel.id + '" class="abtn ' + (this.isFav(sel.id) ? 'on' : '') + '" onclick="app.toggleFav(' + sel.id + ')">' + I.Star(this.isFav(sel.id)) + '</button>';
-          html += '<button id="wiki-btn" class="abtn ' + (s.wiki ? 'on' : '') + '" onclick="app.toggleWiki()">' + I.Wiki + '</button>';
+          html += '<button class="abtn" onclick="app.speak(\'' + safeQuote(sel.english_word) + '\', \'en\', this)">' + I.Speaker + ' English</button>';
+          html += '<button class="abtn" onclick="app.copyWord(\'' + sel.id + '\')">' + I.Copy + '</button>';
+          html += '<button id="star-btn-' + sel.id + '" class="abtn ' + (this.isFav(sel.id) ? 'on' : '') + '" onclick="app.toggleFav(\'' + sel.id + '\')">' + I.Star(this.isFav(sel.id)) + '</button>';
+          var wikiTerm = (!isEnZh && !isApiOnly) ? encodeURIComponent(sel.chinese_traditional) : encodeURIComponent(sel.english_word);
+          html += '<a class="abtn" href="https://en.wikipedia.org/wiki/' + wikiTerm + '" target="_blank" rel="noopener">' + I.Wiki + ' Wikipedia</a>';
+          var googleTerm = encodeURIComponent((!isEnZh && !isApiOnly) ? (sel.chinese_traditional + ' ' + sel.english_word) : (sel.english_word + ' definition'));
+          html += '<a class="abtn" href="https://www.google.com/search?q=' + googleTerm + '" target="_blank" rel="noopener">' + I.ExtLink + ' Google</a>';
           html += '</div>';
-          html += '</div>'; // end .wcard
+          html += '</div>';
 
-          html += '<div id="wiki-container">' + this.buildWikiHTML() + '</div>';
+          if (isApiOnly) {
+            html += '<div id="zhtrans-container">' + this.buildZhTransHTML() + '</div>';
 
-          // ── EN-ZH ENTRY: TAB TOGGLE + POS-GROUPED DEFINITIONS ──
-          if (isEnZh) {
+            if (sel.related_words && sel.related_words.length > 0) {
+              html += '<div class="ds af d2"><div class="dst">Related Local Entries</div>';
+              sel.related_words.forEach(function(r) {
+                html += '<div class="fi" onclick="app.openWordById(\'' + r.data.id + '\')"><div class="fi-i"><div class="fi-en">' + escapeHTML(r.label) + '</div><div class="fi-zh">' + escapeHTML(r.sub) + '</div></div></div>';
+              });
+              html += '</div>';
+            }
+          } else if (isEnZh) {
             html += '<div class="dtab-bar af d1">';
             html += '<button id="dtab-cn" class="dtab' + (s.detailTab === 'cn' ? ' dtab-on' : '') + '" onclick="app.setDetailTab(\'cn\')">英漢 EN-CN</button>';
             html += '<button id="dtab-en" class="dtab' + (s.detailTab === 'en' ? ' dtab-on' : '') + '" onclick="app.setDetailTab(\'en\')">英英 EN-EN</button>';
             html += '</div>';
 
-            // ── CN tab: POS-grouped Chinese definitions ──
             html += '<div id="dtab-cn-panel" style="display:' + (s.detailTab === 'cn' ? 'block' : 'none') + '">';
             if (sel.zh_trans && sel.zh_trans.length > 0) {
               var posGroups = this.parsePosGroups(sel.zh_trans);
@@ -843,7 +1132,6 @@
               html += '</div>';
             }
 
-            // Word forms
             if (sel.exchange) {
               var exchangeParts = sel.exchange.split('/').filter(function(p) { return p.trim(); });
               if (exchangeParts.length > 0) {
@@ -858,9 +1146,8 @@
                 html += '</div></div>';
               }
             }
-            html += '</div>'; // end CN panel
+            html += '</div>'; 
 
-            // ── EN tab: English definition ──
             html += '<div id="dtab-en-panel" style="display:' + (s.detailTab === 'en' ? 'block' : 'none') + '">';
             if (sel.definitions && sel.definitions.length > 0 && sel.definitions[0].text) {
               html += '<div class="ds"><div class="dst">English Definition</div>';
@@ -869,10 +1156,9 @@
             } else {
               html += '<div style="padding:24px;text-align:center;color:var(--ink-m);font-size:var(--fs)">No English-only definition available for this entry.</div>';
             }
-            html += '</div>'; // end EN panel
+            html += '</div>'; 
 
           } else {
-            // ── ZH-EN ENTRY: Standard definitions list ──
             if (sel.definitions && sel.definitions.length > 0) {
               html += '<div class="ds af d2"><div class="dst">Definitions</div>';
               sel.definitions.forEach(function(d, i) {
@@ -890,7 +1176,8 @@
             }
           }
 
-          // ── Synonyms / Antonyms (both types) ──
+          html += '<div id="endict-container">' + this.buildEnDictHTML() + '</div>';
+
           if (sel.synonyms && sel.synonyms.length > 0) {
             html += '<div class="ds af d3"><div class="dst">辨析 Synonyms</div><div class="tg">' + sel.synonyms.map(function(sy) { return '<span class="tag ts" onclick="app.tagClick(\'' + escapeHTML(sy) + '\')">' + sy + '</span>'; }).join('') + '</div>';
             if (sel.antonyms && sel.antonyms.length > 0) {
@@ -899,11 +1186,10 @@
             html += '</div>';
           }
 
-          // ── Idioms (both types) ──
           if (sel.idioms && sel.idioms.length > 0) {
             html += '<div class="ds af d4"><div class="dst">' + I.Book + ' Idioms & Sayings</div>';
             sel.idioms.forEach(function(idm, i) {
-              html += '<div class="ic" onclick="app.openFromIdiomIndex(' + sel.id + ', ' + i + ')"><div class="ic-line"><span class="ic-line-text ic-zh">' + linkify(idm.zh) + '</span>' + spkBtn(idm.zh, 'zh') + '</div><div class="ic-line"><span class="ic-line-text ic-en">"' + linkify(idm.en) + '"</span>' + spkBtn(idm.en, 'en') + '</div><div class="ic-py">' + idm.pinyin + '</div></div>';
+              html += '<div class="ic" onclick="app.openFromIdiomIndex(\'' + sel.id + '\', ' + i + ')"><div class="ic-line"><span class="ic-line-text ic-zh">' + linkify(idm.zh) + '</span>' + spkBtn(idm.zh, 'zh') + '</div><div class="ic-line"><span class="ic-line-text ic-en">"' + linkify(idm.en) + '"</span>' + spkBtn(idm.en, 'en') + '</div><div class="ic-py">' + pinyinTone(idm.pinyin) + '</div></div>';
             });
             html += '</div>';
           }
@@ -916,8 +1202,8 @@
             html += '<div class="es af"><div class="em">☆</div><p>No favorites yet.<br/>Tap the star on any word to save it here.</p></div>';
           } else {
             s.favs.forEach(function(w) {
-              var subLine = w._type === "en-zh" ? (w.phonetic_en || (w.zh_trans && w.zh_trans[0]) || "") : ((w.chinese_traditional || "") + ' · ' + (w.pinyin || ""));
-              html += '<div class="fi af" onclick="app.openWordById(' + w.id + ')"><div class="fi-i"><div class="fi-en">' + w.english_word + '</div><div class="fi-zh">' + subLine + '</div></div><div class="fi-a" onclick="event.stopPropagation()"><button class="fab" onclick="app.speak(\'' + safeQuote(w.english_word) + '\',\'en\', this)">' + I.Speaker + '</button><button class="fab dng" onclick="app.toggleFav(' + w.id + ')">' + I.Trash + '</button></div></div>';
+              var subLine = (w._type === "en-zh" || w._type === "api-only") ? (w.phonetic_en || (w.zh_trans && w.zh_trans[0]) || "") : ((w.chinese_traditional || "") + ' · ' + pinyinTone(w.pinyin || ""));
+              html += '<div class="fi af" onclick="app.openWordById(\'' + w.id + '\')"><div class="fi-i"><div class="fi-en">' + w.english_word + '</div><div class="fi-zh">' + subLine + '</div></div><div class="fi-a" onclick="event.stopPropagation()"><button class="fab" onclick="app.speak(\'' + safeQuote(w.english_word) + '\',\'en\', this)">' + I.Speaker + '</button><button class="fab dng" onclick="app.toggleFav(\'' + w.id + '\')">' + I.Trash + '</button></div></div>';
             });
           }
           html += '</div></div>';
@@ -938,13 +1224,11 @@
 
           html += '<div class="hist-section"><div class="sett-label">Search History</div><div class="hist-card"><div class="hist-header" onclick="app.toggleHistorySettings()"><div class="hist-header-left"><span class="icon">' + I.Clock + '</span><div class="info"><h4>View History</h4><p>' + s.history.length + ' ' + (s.history.length === 1 ? 'search' : 'searches') + ' saved</p></div></div><span id="hist-chevron" class="hist-chevron ' + (s.showHistorySettings ? 'open' : '') + '">▾</span></div><div id="hist-body-wrap">' + this.buildHistorySettingsHTML() + '</div></div></div>';
 
-          html += '<div class="about-section"><h3>About</h3><p>Dr. T English-中文 Reference is a premium, offline-first dictionary using the CC-CEDICT and ECDICT databases.</p><p style="margin-top:12px;font-size:12px;color:var(--ink-m)">Version 2.0.0<br/>© 2026 TapTiger Development LLC. All rights reserved.</p></div></div>';
+          html += '<div class="about-section"><h3>About</h3><p>Dr. 張簡 English-中文 Reference is a premium, offline-first dictionary using the CC-CEDICT and ECDICT databases.</p><p style="margin-top:12px;font-size:12px;color:var(--ink-m)">Version 2.0.0<br/>© 2026 TapTiger Development LLC. All rights reserved.</p></div></div>';
         }
 
-        // TAB BAR
         html += '<div class="tb"><button class="tbn ' + (s.view === 'home' ? 'on' : '') + '" onclick="app.setView(\'home\')">' + I.Home + '<span>Home</span></button><button class="tbn ' + (s.view === 'favorites' ? 'on' : '') + '" onclick="app.setView(\'favorites\')">' + I.Heart + '<span>Favorites</span></button><button class="tbn ' + (s.view === 'settings' ? 'on' : '') + '" onclick="app.setView(\'settings\')">' + I.Gear + '<span>Settings</span></button></div>';
 
-        // TOAST
         html += '<div id="toast-container">';
         if (s.toast) html += '<div class="toast">' + escapeHTML(s.toast) + '</div>';
         html += '</div></div>';
