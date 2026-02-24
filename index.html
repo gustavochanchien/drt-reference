@@ -355,6 +355,23 @@
 
         this.state.isLoaded = true;
 
+        // Load persisted state from localStorage
+        try {
+          var savedPrefs = JSON.parse(localStorage.getItem('drt_prefs') || 'null');
+          if (savedPrefs) {
+            if (savedPrefs.themeId && THEMES[savedPrefs.themeId]) this.state.themeId = savedPrefs.themeId;
+            if (savedPrefs.fontSize && FONT_SIZES.some(function(f) { return f.value === savedPrefs.fontSize; })) this.state.fontSize = savedPrefs.fontSize;
+          }
+        } catch(e) {}
+        try {
+          var savedFavs = JSON.parse(localStorage.getItem('drt_favs') || 'null');
+          if (Array.isArray(savedFavs)) this.state.favs = savedFavs;
+        } catch(e) {}
+        try {
+          var savedHistory = JSON.parse(localStorage.getItem('drt_history') || 'null');
+          if (Array.isArray(savedHistory)) this.state.history = savedHistory;
+        } catch(e) {}
+
         if (window.speechSynthesis) {
           window.speechSynthesis.getVoices();
           if (window.speechSynthesis.onvoiceschanged !== undefined) {
@@ -379,6 +396,10 @@
         root.innerHTML = '<div id="app-wrapper"></div>';
         this.render();
       },
+
+      saveFavs: function() { try { localStorage.setItem('drt_favs', JSON.stringify(this.state.favs)); } catch(e) {} },
+      saveHistory: function() { try { localStorage.setItem('drt_history', JSON.stringify(this.state.history)); } catch(e) {} },
+      savePrefs: function() { try { localStorage.setItem('drt_prefs', JSON.stringify({themeId: this.state.themeId, fontSize: this.state.fontSize})); } catch(e) {} },
 
       getCSSVars: function() {
         var s = this.state;
@@ -489,6 +510,7 @@
         this.state.history = this.state.history.filter(function(h) { return !(h.type === type && h.label === label); });
         this.state.history.unshift({ type: type, label: label, sub: sub, wordId: wordId, timestamp: Date.now() });
         if (this.state.history.length > 100) this.state.history.length = 100;
+        this.saveHistory();
       },
 
       openWord: function(w) {
@@ -594,6 +616,7 @@
           this.state.favs.push(copy);
           this.flash("Added to favorites ★");
         }
+        this.saveFavs();
         if (this.state.view === "favorites") {
           this.render();
         } else {
@@ -901,6 +924,7 @@
       clearHistory: function(e) {
         if (e) e.stopPropagation();
         this.state.history = [];
+        this.saveHistory();
         this.flash("Search history cleared");
         this.updateSearchUI(this.state.query);
         var histWrap = document.getElementById('hist-body-wrap');
@@ -910,6 +934,7 @@
       removeHistoryItem: function(e, idx) {
         if (e) e.stopPropagation();
         this.state.history.splice(idx, 1);
+        this.saveHistory();
         this.updateSearchUI(this.state.query);
         var histWrap = document.getElementById('hist-body-wrap');
         if (histWrap) histWrap.innerHTML = this.buildHistorySettingsHTML();
@@ -917,6 +942,7 @@
 
       setThemeId: function(id) {
         this.state.themeId = id;
+        this.savePrefs();
         var appCont = document.getElementById('app-container');
         if (appCont) appCont.style.cssText = this.getCSSVars();
         Object.values(THEMES).forEach(function(th) {
@@ -940,6 +966,7 @@
 
       setFontSize: function(val) {
         this.state.fontSize = val;
+        this.savePrefs();
         var appCont = document.getElementById('app-container');
         if (appCont) appCont.style.cssText = this.getCSSVars();
         FONT_SIZES.forEach(function(fs) {
