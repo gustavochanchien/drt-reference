@@ -1163,8 +1163,6 @@
           html += '<button class="abtn" onclick="app.speak(\'' + safeQuote(sel.english_word) + '\', \'en\', this)">' + I.Speaker + ' English</button>';
           html += '<button class="abtn" onclick="app.copyWord(\'' + sel.id + '\')">' + I.Copy + '</button>';
           html += '<button id="star-btn-' + sel.id + '" class="abtn ' + (this.isFav(sel.id) ? 'on' : '') + '" onclick="app.toggleFav(\'' + sel.id + '\')">' + I.Star(this.isFav(sel.id)) + '</button>';
-          var wikiTerm = (!isEnZh && !isApiOnly) ? encodeURIComponent(sel.chinese_traditional) : encodeURIComponent(sel.english_word);
-          html += '<a class="abtn" href="https://en.wikipedia.org/wiki/' + wikiTerm + '" target="_blank" rel="noopener">' + I.Wiki + ' Wikipedia</a>';
           var googleTerm = encodeURIComponent((!isEnZh && !isApiOnly) ? (sel.chinese_traditional + ' ' + sel.english_word) : (sel.english_word + ' definition'));
           html += '<a class="abtn" href="https://www.google.com/search?q=' + googleTerm + '" target="_blank" rel="noopener">' + I.ExtLink + ' Google</a>';
           html += '</div>';
