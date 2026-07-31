@@ -2,14 +2,47 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- viewport-fit=cover is what makes env(safe-area-inset-*) resolve to real
+       values. Without it the tab bar's safe-area padding was always max(8px, 0)
+       and sat under the home indicator. Pinch zoom stays off deliberately: the
+       app maps the pinch gesture to its own font scaling instead. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Dr. 張簡 En-中 Reference</title>
 
   <link rel="apple-touch-icon" href="apple-touch-icon.jpg?v=2">
+  <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
+  <!-- black-translucent lets the app paint under the status bar, so it follows
+       the active theme instead of being permanently light. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Dr. 張簡">
-  
+  <meta name="theme-color" content="#faf8f5" id="theme-color-meta">
+  <meta name="description" content="Offline English–Chinese dictionary built on CC-CEDICT and ECDICT.">
+
+  <!-- Applied before the stylesheet so a dark-theme launch never flashes white.
+       The full theme is written to :root once the app boots. -->
+  <script>
+    (function () {
+      try {
+        var p = JSON.parse(localStorage.getItem('drt_prefs') || 'null');
+        if (p && p.themeId && p.themeId !== 'light') {
+          document.documentElement.setAttribute('data-booting-theme', p.themeId);
+          var bg = { dark: '#1a1815', cherry: '#fef5f8', blue: '#f0f5fa' }[p.themeId];
+          if (bg) {
+            document.documentElement.style.background = bg;
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute('content', bg);
+          }
+        }
+        if (p && p.fontSize) document.documentElement.style.setProperty('--fs', p.fontSize + 'px');
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,16 +51,37 @@
   <script>
     // ─── Themes ────────────────────────────────────────────────────────────
     const THEMES = {
-      light: { id: "light", name: "Light", emoji: "☀️", ink: "#1a1a1a", inkLight: "#4a4a4a", inkMuted: "#8a8a8a", paper: "#faf8f5", paperWarm: "#f5f0e8", paperDeep: "#ece5d8", accent: "#c0392b", accentGlow: "rgba(192,57,43,0.08)", gold: "#b8860b", goldSoft: "#f0e6c8", border: "#e0d8cc", cardBg: "#ffffff", tabBg: "rgba(250,248,245,0.92)", wodGrad: "linear-gradient(135deg,#fefcf9 0%,#f8f0e3 100%)", synBg: "#eef5ee", synColor: "#2d6a2e", synBorder: "#c8e0c8", antBg: "#fef0f0", antColor: "#a83232", antBorder: "#f0d0d0" },
-      dark: { id: "dark", name: "Dark", emoji: "🌙", ink: "#e8e4df", inkLight: "#b8b4ae", inkMuted: "#7a7670", paper: "#1a1815", paperWarm: "#252220", paperDeep: "#1f1d1a", accent: "#e8654a", accentGlow: "rgba(232,101,74,0.12)", gold: "#d4a843", goldSoft: "#3a3425", border: "#3a3632", cardBg: "#252220", tabBg: "rgba(26,24,21,0.94)", wodGrad: "linear-gradient(135deg,#2a2620 0%,#302a22 100%)", synBg: "#1e2a1e", synColor: "#7cc47c", synBorder: "#2a3d2a", antBg: "#2e1e1e", antColor: "#e88080", antBorder: "#3d2a2a" },
-      cherry: { id: "cherry", name: "Cherry Blossom", emoji: "🌸", ink: "#4a2040", inkLight: "#6d4060", inkMuted: "#a07090", paper: "#fef5f8", paperWarm: "#fce8f0", paperDeep: "#f8d8e4", accent: "#d4467a", accentGlow: "rgba(212,70,122,0.1)", gold: "#c07048", goldSoft: "#f8e0d0", border: "#f0c8d8", cardBg: "#ffffff", tabBg: "rgba(254,245,248,0.92)", wodGrad: "linear-gradient(135deg,#fff5f8 0%,#fce0ec 100%)", synBg: "#f0f5ee", synColor: "#507040", synBorder: "#d0e0c8", antBg: "#fef0f0", antColor: "#b04050", antBorder: "#f0d0d0" },
-      blue: { id: "blue", name: "Ocean Blue", emoji: "🌊", ink: "#1a2a3a", inkLight: "#3a5068", inkMuted: "#708898", paper: "#f0f5fa", paperWarm: "#e0eaf4", paperDeep: "#d0dde8", accent: "#2070b8", accentGlow: "rgba(32,112,184,0.1)", gold: "#b08830", goldSoft: "#e8dcc0", border: "#c0d0e0", cardBg: "#ffffff", tabBg: "rgba(240,245,250,0.92)", wodGrad: "linear-gradient(135deg,#f4f8fc 0%,#dce8f4 100%)", synBg: "#e8f4ee", synColor: "#2a6848", synBorder: "#b8dcc8", antBg: "#fce8e8", antColor: "#a83232", antBorder: "#f0d0d0" }
+      light: { id: "light", name: "Light", emoji: "☀️", ink: "#1a1a1a", inkLight: "#4a4a4a", inkMuted: "#6b6b6b", paper: "#faf8f5", paperWarm: "#f5f0e8", paperDeep: "#ece5d8", accent: "#c0392b", accentGlow: "rgba(192,57,43,0.08)", gold: "#b8860b", goldSoft: "#f0e6c8", border: "#e0d8cc", cardBg: "#ffffff", tabBg: "rgba(250,248,245,0.92)", wodGrad: "linear-gradient(135deg,#fefcf9 0%,#f8f0e3 100%)", synBg: "#eef5ee", synColor: "#2d6a2e", synBorder: "#c8e0c8", antBg: "#fef0f0", antColor: "#a83232", antBorder: "#f0d0d0" },
+      dark: { id: "dark", name: "Dark", emoji: "🌙", ink: "#e8e4df", inkLight: "#b8b4ae", inkMuted: "#9a958d", paper: "#1a1815", paperWarm: "#252220", paperDeep: "#1f1d1a", accent: "#e8654a", accentGlow: "rgba(232,101,74,0.12)", gold: "#d4a843", goldSoft: "#3a3425", border: "#3a3632", cardBg: "#252220", tabBg: "rgba(26,24,21,0.94)", wodGrad: "linear-gradient(135deg,#2a2620 0%,#302a22 100%)", synBg: "#1e2a1e", synColor: "#7cc47c", synBorder: "#2a3d2a", antBg: "#2e1e1e", antColor: "#e88080", antBorder: "#3d2a2a" },
+      cherry: { id: "cherry", name: "Cherry Blossom", emoji: "🌸", ink: "#4a2040", inkLight: "#6d4060", inkMuted: "#8a5878", paper: "#fef5f8", paperWarm: "#fce8f0", paperDeep: "#f8d8e4", accent: "#d4467a", accentGlow: "rgba(212,70,122,0.1)", gold: "#c07048", goldSoft: "#f8e0d0", border: "#f0c8d8", cardBg: "#ffffff", tabBg: "rgba(254,245,248,0.92)", wodGrad: "linear-gradient(135deg,#fff5f8 0%,#fce0ec 100%)", synBg: "#f0f5ee", synColor: "#507040", synBorder: "#d0e0c8", antBg: "#fef0f0", antColor: "#b04050", antBorder: "#f0d0d0" },
+      blue: { id: "blue", name: "Ocean Blue", emoji: "🌊", ink: "#1a2a3a", inkLight: "#3a5068", inkMuted: "#5a7285", paper: "#f0f5fa", paperWarm: "#e0eaf4", paperDeep: "#d0dde8", accent: "#2070b8", accentGlow: "rgba(32,112,184,0.1)", gold: "#b08830", goldSoft: "#e8dcc0", border: "#c0d0e0", cardBg: "#ffffff", tabBg: "rgba(240,245,250,0.92)", wodGrad: "linear-gradient(135deg,#f4f8fc 0%,#dce8f4 100%)", synBg: "#e8f4ee", synColor: "#2a6848", synBorder: "#b8dcc8", antBg: "#fce8e8", antColor: "#a83232", antBorder: "#f0d0d0" }
     };
 
     // ─── Dictionary State ──────────────────────────────────────────────────
     let DICTIONARY = [];
-    let IDIOM_INDEX = [];
-    const FONT_SIZES = [{label:"S",value:14},{label:"M",value:16},{label:"L",value:18},{label:"XL",value:21}];
+    let BY_ID = new Map();     // id -> entry, so lookups aren't a 183k linear scan
+    let BY_EN = new Map();     // lowercased English headword -> most common entry
+    let BY_ZH = new Map();     // traditional headword -> most common entry
+    let BY_ZH_S = new Map();   // simplified-only headword -> most common entry.
+                               // Kept separate so that 咊 (simplified 和) cannot
+                               // outrank the actual entry for 和.
+
+    // Definition text for searching lives in one big lowercase string rather than
+    // a normalized copy on every entry. 183k small strings cost far more in object
+    // overhead than one blob plus an offset table, and scanning it with indexOf is
+    // fast enough to search every entry instead of bailing out early.
+    let DEF_BLOB = "";
+    let DEF_OFF = null;        // Uint32Array: entry index -> start offset in DEF_BLOB
+
+    const FONT_SIZES = [{label:"S",value:14},{label:"M",value:16},{label:"L",value:18},{label:"XL",value:21},{label:"XXL",value:25},{label:"XXXL",value:30}];
+    const MIN_FONT = 14, MAX_FONT = 30;
+
+    const EXCHANGE_LABELS = { p: "Past tense", d: "Past participle", i: "Present participle",
+      '3': "3rd person singular", r: "Comparative", t: "Superlative", s: "Plural",
+      '0': "Base form", '1': "Related forms" };
+
+    const EXAM_TAGS = { zk: "中考", gk: "高考", cet4: "CET-4", cet6: "CET-6",
+      ky: "考研", toefl: "TOEFL", gre: "GRE", ielts: "IELTS" };
 
     // ─── Icons ─────────────────────────────────────────────────────────────
     const I = {
@@ -35,7 +89,6 @@
       Speaker: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
       Star: function(f) { return `<svg width="18" height="18" viewBox="0 0 24 24" fill="${f ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`; },
       Copy: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
-      Wiki: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
       Back: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`,
       Home: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
       Heart: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
@@ -46,23 +99,50 @@
       Trash: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
       Check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
       Clock: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-      Quote: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" opacity="0.5"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>`,
       SpeakerMini: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`,
+      Share: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`,
       ExtLink: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`,
     };
 
     // ─── Utility ───────────────────────────────────────────────────────────
     function escapeHTML(str) {
-      if (!str) return "";
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
-    
+
+    // Word of the Day is drawn from a frequency-ranked shortlist. Picking
+    // uniformly across all 183k entries meant it nearly always landed on
+    // something like 羅漢病 ("snail fever") rather than a word worth learning.
+    let WOD_POOL = null;
+    const WOD_POOL_SIZE = 3000;
+
+    function wordOfDayPool() {
+      if (WOD_POOL) return WOD_POOL;
+      WOD_POOL = DICTIONARY
+        .filter(function(w) {
+          if (!w.freq || w.freq > 12000) return false;
+          if (w._type !== "zh-en") return false;          // the headword should be Chinese
+          if (w.chinese_traditional.length < 2) return false;  // single characters are dull
+          if (w.chinese_traditional.length > 4) return false;
+          if (/^(surname |variant |old variant |used in |see |abbr)/i.test(w.english_word)) return false;
+          if (/[A-Za-z0-9]/.test(w.chinese_traditional)) return false;
+          return true;
+        })
+        .sort(function(a, b) { return a.freq - b.freq; })
+        .slice(0, WOD_POOL_SIZE);
+      return WOD_POOL;
+    }
+
     function getWordOfDay() {
-      if (!DICTIONARY.length) return null;
-      const t = new Date(), s = t.getFullYear()*10000 + (t.getMonth()+1)*100 + t.getDate();
-      return DICTIONARY[s % DICTIONARY.length];
+      const pool = wordOfDayPool();
+      if (!pool.length) return DICTIONARY.length ? DICTIONARY[0] : null;
+      const t = new Date();
+      const seed = t.getFullYear() * 10000 + (t.getMonth() + 1) * 100 + t.getDate();
+      return pool[seed % pool.length];
     }
-    
+
     function norm(s) {
       if (!s) return "";
       return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
@@ -99,96 +179,167 @@
       });
     }
 
+    // Escapes a value for use inside a single-quoted JS string in an inline
+    // handler. Newlines matter: a raw one is a syntax error in a string literal,
+    // and CC-CEDICT glosses do contain them.
     function safeQuote(text) {
-      if (!text) return "";
-      return text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      if (text === null || text === undefined) return "";
+      return String(text)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/</g, '&lt;')
+        .replace(/"/g, '&quot;');
     }
 
     function spkBtn(text, lang) {
       if (!text) return "";
       var safe = safeQuote(text);
-      if (lang === "auto") {
-        lang = /[\u4e00-\u9fff\u3400-\u4dbf]/.test(text) ? "zh" : "en";
-      }
-      return ' <button class="spk" onclick="event.stopPropagation();app.speak(\'' + safe + '\',\'' + lang + '\',this)" title="Listen">' + I.SpeakerMini + '</button>';
+      if (lang === "auto") lang = /[一-鿿㐀-䶿]/.test(text) ? "zh" : "en";
+      return ' <button class="spk" aria-label="Pronounce" onclick="event.stopPropagation();app.speak(\'' + safe + '\',\'' + lang + '\',this)" title="Listen">' + I.SpeakerMini + '</button>';
     }
 
-    var SKIP_WORDS = new Set(["a","an","the","of","to","in","on","at","is","it","or","and","for","by","as","be","do","if","no","so","up","we","he","me","my","us","not","but","are","was","has","had","its","all","can","may","one","two","any","few","who","how","also","from","that","this","with","have","will","been","were","into","than","them","they","each","more","some","very","much","most","only","over","just","such","same","does","did","get","got","its","yet","our","own","way","may"]);
-    
-    // NEW FLAG: splitChineseChars defaults to false (keeps phrases together)
-    function linkify(text, splitChineseChars = false) {
+    var SKIP_WORDS = new Set(["a","an","the","of","to","in","on","at","is","it","or","and","for","by","as","be","do","if","no","so","up","we","he","me","my","us","not","but","are","was","has","had","its","all","can","may","one","two","any","few","who","how","also","from","that","this","with","have","will","been","were","into","than","them","they","each","more","some","very","much","most","only","over","just","such","same","does","did","get","got","yet","our","own","way"]);
+
+    // Splits text into tappable lookup targets. The trailing `[^...]` alternative
+    // must accept a lone '[': without it an unclosed bracket matched no branch at
+    // all and String.match(/g) dropped the character from the output entirely.
+    var LINKIFY_RE = /[一-鿿㐀-䶿豈-﫿]+|[a-zA-Z'À-ſ]+|\[[^\]]*\]|[\s\S]/g;
+
+    function linkify(text, splitChineseChars) {
       if (!text) return "";
-      var parts = text.match(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+|[a-zA-Z'\u00C0-\u017F]+|\[[^\]]*\]|[^a-zA-Z\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\[]+/g);
+      var parts = String(text).match(LINKIFY_RE);
       if (!parts) return escapeHTML(text);
-      var html = "";
+      var html = "", plain = "";
+      function flush() { if (plain) { html += escapeHTML(plain); plain = ""; } }
+
       for (var i = 0; i < parts.length; i++) {
         var p = parts[i];
-        if (/^[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+$/.test(p)) {
+        if (/^[一-鿿㐀-䶿豈-﫿]+$/.test(p)) {
+          flush();
           if (splitChineseChars) {
-            // Split up characters for titles (like "忐" and "忑")
             for (var c = 0; c < p.length; c++) {
               var ch = p[c];
-              html += '<span class="wlink wlink-zh" onclick="event.stopPropagation();app.lookupWord(\'' + ch + '\')">' + ch + '</span>';
+              html += '<span class="wlink wlink-zh" lang="zh-Hant" role="button" tabindex="0" onclick="event.stopPropagation();app.lookupWord(\'' + safeQuote(ch) + '\')">' + escapeHTML(ch) + '</span>';
             }
           } else {
-            // Keep word joined together for descriptions (like "忐忑")
-            html += '<span class="wlink wlink-zh" onclick="event.stopPropagation();app.lookupWord(\'' + safeQuote(p) + '\')">' + escapeHTML(p) + '</span>';
+            html += '<span class="wlink wlink-zh" lang="zh-Hant" role="button" tabindex="0" onclick="event.stopPropagation();app.lookupWord(\'' + safeQuote(p) + '\')">' + escapeHTML(p) + '</span>';
           }
-        } else if (/^[a-zA-Z'\u00C0-\u017F]+$/.test(p)) {
-          if (p.length <= 2 || SKIP_WORDS.has(p.toLowerCase())) {
-            html += escapeHTML(p);
-          } else {
-            html += '<span class="wlink wlink-en" onclick="event.stopPropagation();app.lookupWord(\'' + safeQuote(p) + '\')">' + escapeHTML(p) + '</span>';
+        } else if (/^[a-zA-Z'À-ſ]+$/.test(p)) {
+          if (p.length <= 2 || SKIP_WORDS.has(p.toLowerCase())) { plain += p; }
+          else {
+            flush();
+            html += '<span class="wlink wlink-en" role="button" tabindex="0" onclick="event.stopPropagation();app.lookupWord(\'' + safeQuote(p) + '\')">' + escapeHTML(p) + '</span>';
           }
-        } else if (/^\[/.test(p)) {
+        } else if (p.charAt(0) === '[' && p.length > 1) {
+          flush();
           html += '<span class="wlink-py">' + escapeHTML(pinyinTone(p.slice(1, -1))) + '</span>';
         } else {
-          html += escapeHTML(p);
+          plain += p;
         }
       }
+      flush();
       return html;
     }
 
+    // Keep whichever homograph has the better (lower) frequency rank.
+    function indexHeadword(map, key, entry) {
+      if (!key) return;
+      var cur = map.get(key);
+      if (!cur || (entry.freq || 2000000) < (cur.freq || 2000000)) map.set(key, entry);
+    }
+
+    // Which entry does a DEF_BLOB offset belong to? Binary search the offset table.
+    function entryAtOffset(off) {
+      var lo = 0, hi = DEF_OFF.length - 1, ans = 0;
+      while (lo <= hi) {
+        var mid = (lo + hi) >> 1;
+        if (DEF_OFF[mid] <= off) { ans = mid; lo = mid + 1; } else { hi = mid - 1; }
+      }
+      return ans;
+    }
+
+    var SCORE_EXACT = 100, SCORE_PREFIX = 90, SCORE_DEF_WORD = 80,
+        SCORE_ZH_PART = 70, SCORE_DEF_PART = 60;
+    var DEF_BUCKET_CAP = 400;   // per tier; headword tiers are never capped
+    var SCAN_GUARD = 200000;    // ceiling on indexOf steps for very common substrings
+
     function searchDB(q) {
       if (!q || !q.trim() || !DICTIONARY.length) return [];
-      const n = norm(q);
+      var raw = q.trim();
+      var n = norm(raw);
       if (!n) return [];
+      var isCJK = /[一-鿿㐀-䶿豈-﫿]/.test(raw);
 
-      let results = [];
-      let matchCount = 0;
-      
-      for (let i = 0; i < DICTIONARY.length; i++) {
-        const w = DICTIONARY[i];
-        let s = 0;
-        
-        if (w._enLow === n || w.chinese_traditional === n || w._pyNorm === n || w._pyJoined === n || w.chinese_simplified === n) {
-            s = 100; // Exact match
-        } else if (w._enLow.startsWith(n) || (w._pyJoined && w._pyJoined.startsWith(n))) {
-            s = 90;  // Headword starts with query (Boosted to 90)
-        } else if (n.length > 2 && ((" " + w._defsNorm + " ").includes(" " + n + " ") || (" " + w._zhTransNorm + " ").includes(" " + n + " "))) {
-            s = 80;  // Exact word found in definition (Downgraded to 80)
-        } else if (w.chinese_traditional && w.chinese_traditional.includes(n) || (w.chinese_simplified && w.chinese_simplified.includes(n))) {
-            s = 70;  // Chinese character partial match
-        } else if (n.length > 2 && (w._defsNorm.includes(n) || (w._zhTransNorm && w._zhTransNorm.includes(n)))) {
-            s = 60;  // Partial string match in definition
-        }
-
-        if (s > 0) {
-            let sub;
-            if (w._type === "en-zh") {
-                sub = w.zh_trans.length > 0 ? w.zh_trans[0] : w.english_word;
-                if (w.phonetic_en) sub = w.phonetic_en + ' · ' + sub;
-            } else {
-                sub = (w.chinese_traditional || "") + ' · ' + pinyinTone(w.pinyin || "");
-            }
-            results.push({ type: "word", data: w, score: s, label: w.english_word, sub: sub });
-            matchCount++;
-        }
-
-        if (matchCount > 500) break;
+      var best = new Map();
+      function bump(idx, s) {
+        var cur = best.get(idx);
+        if (cur === undefined || s > cur) best.set(idx, s);
       }
 
-      return results.sort((a, b) => b.score - a.score).slice(0, 50);
+      // Pass 1 — headwords. Scans every entry: this tier decides whether an exact
+      // match is found at all, so it must never bail out early. (The old code
+      // broke out after 500 raw matches and then sorted, which meant a perfect
+      // match late in the file was simply never seen.)
+      for (var i = 0; i < DICTIONARY.length; i++) {
+        var w = DICTIONARY[i], s = 0;
+        if (w._enLow === n || w._pyNorm === n || w._pyJoined === n ||
+            w.chinese_traditional === raw || w.chinese_simplified === raw) {
+          s = SCORE_EXACT;
+        } else if (w._enLow.indexOf(n) === 0 || (w._pyJoined && w._pyJoined.indexOf(n) === 0)) {
+          s = SCORE_PREFIX;
+        } else if (isCJK && (w.chinese_traditional.indexOf(raw) !== -1 ||
+                             (w.chinese_simplified && w.chinese_simplified.indexOf(raw) !== -1))) {
+          s = SCORE_ZH_PART;
+        }
+        if (s) bump(i, s);
+      }
+
+      // Pass 2 — definitions, over the single lowercase blob. Whole-word and
+      // substring hits are capped separately so a flood of substring noise can't
+      // crowd out whole-word matches the way one shared cap would.
+      if (DEF_OFF && n.length > 1) {
+        var pos = 0, steps = 0, nWord = 0, nPart = 0, len = n.length;
+        while (steps++ < SCAN_GUARD && (nWord < DEF_BUCKET_CAP || nPart < DEF_BUCKET_CAP)) {
+          var at = DEF_BLOB.indexOf(n, pos);
+          if (at < 0) break;
+          pos = at + len;
+          var before = at === 0 ? ' ' : DEF_BLOB.charAt(at - 1);
+          var after = DEF_BLOB.charAt(at + len) || ' ';
+          var whole = !/[a-z0-9]/.test(before) && !/[a-z0-9]/.test(after);
+          if (whole ? nWord < DEF_BUCKET_CAP : nPart < DEF_BUCKET_CAP) {
+            var idx = entryAtOffset(at);
+            if (!best.has(idx)) { if (whole) nWord++; else nPart++; }
+            bump(idx, whole ? SCORE_DEF_WORD : SCORE_DEF_PART);
+          }
+        }
+      }
+
+      // Rank by match quality, then by corpus frequency so common words surface
+      // first instead of whatever happened to come first in the file.
+      var ranked = [];
+      best.forEach(function(score, idx) { ranked.push([score, idx]); });
+      ranked.sort(function(a, b) {
+        if (b[0] !== a[0]) return b[0] - a[0];
+        var fa = DICTIONARY[a[1]].freq || 2000000, fb = DICTIONARY[b[1]].freq || 2000000;
+        if (fa !== fb) return fa - fb;
+        return a[1] - b[1];
+      });
+
+      var out = [];
+      for (var k = 0; k < ranked.length && k < 60; k++) {
+        var e = DICTIONARY[ranked[k][1]];
+        var sub;
+        if (e._type === "en-zh") {
+          sub = e.zh_trans.length ? e.zh_trans[0] : e.english_word;
+          if (e.phonetic_en) sub = e.phonetic_en + ' · ' + sub;
+        } else {
+          sub = e.chinese_traditional + ' · ' + pinyinTone(e.pinyin);
+        }
+        out.push({ type: "word", data: e, score: ranked[k][0], label: e.english_word, sub: sub });
+      }
+      return out;
     }
 
     // ─── App State & Logic ─────────────────────────────────────────────────
@@ -199,7 +350,6 @@
         results: [],
         sel: null,
         favs: [],
-        wiki: false,
         toast: null,
         themeId: "light",
         fontSize: 16,
@@ -208,6 +358,7 @@
         showHistorySettings: false,
         isLoaded: false,
         detailTab: "cn",
+        scriptPref: "trad",
         navStack: [],
         enDict: null,
         enDictLoading: false,
@@ -215,7 +366,8 @@
         enDictTranslations: {},   
         zhApiTrans: null,         
         zhApiTransLoading: false,
-        zhApiTransIsEn: false
+        zhApiTransIsEn: false,
+        zhApiTransError: false
       },
       toastTimeout: null,
       searchTimeout: null,
@@ -223,9 +375,16 @@
 
       async init() {
         const root = document.getElementById('root');
+
+        // Read preferences first. These used to be loaded only after the whole
+        // dictionary had been fetched and parsed, so a dark-theme user stared at
+        // a hardcoded white loading screen for the entire wait.
+        this.loadPrefs();
+        this.applyTheme();
+
         
         root.innerHTML = `
-          <div style="display:flex; height:100vh; align-items:center; justify-content:center; background:#faf8f5; color:#1a1a1a; font-family:sans-serif; flex-direction:column; gap:12px;">
+          <div style="display:flex; height:100vh; align-items:center; justify-content:center; background:var(--paper,#faf8f5); color:var(--ink,#1a1a1a); font-family:sans-serif; flex-direction:column; gap:12px;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: pulse 1s infinite;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             <div id="loading-text" style="font-weight:600;">Loading Dictionary... 0%</div>
           </div>
@@ -234,143 +393,138 @@
 
         try {
           const response = await fetch('dictionary.jsonl');
-          if (!response.ok) throw new Error("Could not find dictionary.jsonl");
-          const text = await response.text();
+          if (!response.ok) throw new Error("Could not fetch dictionary.jsonl (" + response.status + ")");
+          let text = await response.text();
           const lines = text.split('\n');
+          text = null;   // 28MB; the split copy is all we need from here on
+
+          const defChunks = [];
+          const offsets = [];
+          let blobLen = 0;
 
           await new Promise((resolve) => {
             let i = 0;
-            const chunkSize = 2000; 
-            
+            const chunkSize = 4000;
+
             const processChunk = () => {
               const end = Math.min(i + chunkSize, lines.length);
-              
+
               for (; i < end; i++) {
-                const line = lines[i].trim();
+                const line = lines[i];
+                lines[i] = null;   // release as we go; the raw text is 28MB
                 if (!line) continue;
-                
-                let entry;
-                try {
-                  entry = JSON.parse(line);
-                } catch (e) { continue; }
 
-                if (entry.type === "zh-en") {
-                  const en_word = entry.en || entry.zh_trad;
-                  const en_norm = norm(en_word);
-                  const defs_norm = norm((entry.defs || []).join(" "));
-                  const py_no_tones = (entry.pinyin || "").replace(/\d/g, "");
-                  const py_norm = norm(py_no_tones);
-                  const py_joined = py_norm.replace(/\s/g, "");
+                let e;
+                try { e = JSON.parse(line); } catch (err) { continue; }
+                if (!e || e.i === undefined) continue;
 
-                  DICTIONARY.push({
-                    id: entry.id,
+                let w;
+                if (e.t === 0) {
+                  // 中→英 (CC-CEDICT). The headword is Chinese; d[0] is the gloss.
+                  const defs = e.d || [];
+                  w = {
+                    id: e.i,
                     _type: "zh-en",
-                    english_word: en_word,
-                    chinese_traditional: entry.zh_trad || "",
-                    chinese_simplified: entry.zh_simp || "",
-                    pinyin: entry.pinyin || "",
+                    english_word: defs[0] || e.w,
+                    chinese_traditional: e.w,
+                    chinese_simplified: e.s || e.w,
+                    pinyin: e.p || "",
                     phonetic_en: "",
-                    part_of_speech: [],
-                    definitions: (entry.defs || []).map(function(m) { return { pos: "", text: m, example_en: "", example_zh: "" }; }),
-                    synonyms: [],
-                    antonyms: [],
-                    idioms: [],
+                    definitions: defs,
                     zh_trans: [],
-                    exchange: entry.exchange || "",
-                    wiki_summary: "",
-                    wiki_thumb: null,
-                    _enLow: en_norm,
-                    _pyNorm: py_norm,
-                    _pyJoined: py_joined,
-                    _defsNorm: defs_norm,
-                    _zhTransNorm: ""
-                  });
-
-                } else if (entry.type === "en-zh") {
-                  const en_word = entry.en || "";
-                  const en_norm = norm(en_word);
-                  const zh_trans = entry.zh_trans || [];
-                  const defs_norm = norm((entry.defs || []).join(" "));
-                  const zh_trans_norm = norm(zh_trans.join(" "));
-
-                  const definitions = [];
-                  if (entry.defs && entry.defs[0]) {
-                    definitions.push({ pos: "", text: entry.defs[0], example_en: "", example_zh: "" });
-                  }
-                  zh_trans.forEach(function(t) {
-                    definitions.push({ pos: "", text: t, example_en: "", example_zh: "" });
-                  });
-
-                  var displayZh = "";
-                  if (zh_trans.length > 0) {
-                    displayZh = zh_trans.map(function(t) { return t.replace(/^[a-z]+\.\s*/i, ""); }).join("; ");
+                    exchange: "",
+                    freq: e.f || 0,
+                    tags: "",
+                    collins: 0
+                  };
+                  const pyPlain = norm((e.p || "").replace(/\d/g, ""));
+                  w._enLow = norm(w.english_word);
+                  w._pyNorm = pyPlain;
+                  w._pyJoined = pyPlain.replace(/\s/g, "");
+                } else {
+                  // 英→中 (ECDICT). The headword is English; z holds the Chinese.
+                  const zh = e.z || [];
+                  const defs = e.d || [];
+                  let displayZh = "";
+                  if (zh.length) {
+                    displayZh = zh.map(function(t) { return t.replace(/^[a-z]+\.\s*/i, ""); }).join("; ");
                     if (displayZh.length > 40) displayZh = displayZh.substring(0, 40) + "…";
                   }
 
-                  DICTIONARY.push({
-                    id: entry.id,
+                  w = {
+                    id: e.i,
                     _type: "en-zh",
-                    english_word: en_word,
+                    english_word: e.w,
                     chinese_traditional: displayZh,
                     chinese_simplified: "",
                     pinyin: "",
-                    phonetic_en: entry.phonetic || "",
-                    part_of_speech: [],
-                    definitions: definitions,
-                    synonyms: [],
-                    antonyms: [],
-                    idioms: [],
-                    zh_trans: zh_trans,
-                    exchange: entry.exchange || "",
-                    wiki_summary: "",
-                    wiki_thumb: null,
-                    _enLow: en_norm,
-                    _pyNorm: "",
-                    _pyJoined: "",
-                    _defsNorm: defs_norm,
-                    _zhTransNorm: zh_trans_norm
-                  });
+                    phonetic_en: e.h || "",
+                    definitions: defs,
+                    zh_trans: zh,
+                    exchange: e.x || "",
+                    freq: e.f || 0,
+                    tags: e.g || "",
+                    collins: e.c || 0
+                  };
+                  w._enLow = norm(e.w);
+                  w._pyNorm = "";
+                  w._pyJoined = "";
+                }
+
+                // One lowercase blob for definition search instead of a normalized
+                // copy per entry (see DEF_BLOB above).
+                let searchText;
+                if (e.t === 0) {
+                  searchText = norm((e.d || []).join(" "));
+                } else {
+                  searchText = norm((e.d || []).join(" ") + " " + (e.z || []).join(" "));
+                }
+                offsets.push(blobLen);
+                defChunks.push(searchText);
+                blobLen += searchText.length + 1;   // +1 for the '\n' joiner
+
+                DICTIONARY.push(w);
+                BY_ID.set(w.id, w);
+
+                // Headword indexes keep the *most common* homograph, so tapping 和
+                // opens "and" rather than the surname that happens to be listed first.
+                indexHeadword(BY_EN, w._enLow, w);
+                if (w._type === "zh-en") {
+                  indexHeadword(BY_ZH, w.chinese_traditional, w);
+                  if (w.chinese_simplified !== w.chinese_traditional) indexHeadword(BY_ZH_S, w.chinese_simplified, w);
                 }
               }
 
-              var progress = Math.round((i / lines.length) * 100);
-              var loadingText = document.getElementById('loading-text');
-              if (loadingText) loadingText.innerText = 'Loading Dictionary... ' + progress + '%';
+              const progress = Math.round((i / lines.length) * 100);
+              const loadingText = document.getElementById('loading-text');
+              if (loadingText) loadingText.textContent = 'Loading Dictionary… ' + progress + '%';
 
-              if (i < lines.length) {
-                setTimeout(processChunk, 0); 
-              } else {
-                resolve();
-              }
+              if (i < lines.length) setTimeout(processChunk, 0);
+              else resolve();
             };
-            
+
             processChunk();
           });
-          
+
+          DEF_BLOB = defChunks.join('\n');
+          DEF_OFF = Uint32Array.from(offsets);
+          defChunks.length = 0;
+
+          if (!DICTIONARY.length) throw new Error("dictionary.jsonl parsed to zero entries");
+
         } catch (err) {
             console.error(err);
-            root.innerHTML = '<div style="padding:20px; text-align:center; color:red; font-family:sans-serif;">Error loading dictionary. Ensure \'dictionary.jsonl\' is in the same folder and you are running a local web server (e.g., python -m http.server).</div>';
+            root.innerHTML = '<div style="padding:24px; text-align:center; font-family:sans-serif; line-height:1.6;">'
+              + '<div style="font-size:38px; margin-bottom:10px">📖</div>'
+              + '<div style="font-weight:600; margin-bottom:8px">Could not load the dictionary</div>'
+              + '<div style="font-size:14px; color:#666">' + escapeHTML(err && err.message ? err.message : String(err)) + '</div>'
+              + '<div style="font-size:13px; color:#888; margin-top:14px">If you are opening this file directly, serve it over HTTP instead &mdash; e.g. <code>python3 -m http.server</code>.</div>'
+              + '<button onclick="location.reload()" style="margin-top:18px; padding:10px 20px; border-radius:100px; border:1.5px solid #ccc; background:#fff; font-size:14px; cursor:pointer">Retry</button>'
+              + '</div>';
             return;
         }
 
         this.state.isLoaded = true;
-
-        // Load persisted state from localStorage
-        try {
-          var savedPrefs = JSON.parse(localStorage.getItem('drt_prefs') || 'null');
-          if (savedPrefs) {
-            if (savedPrefs.themeId && THEMES[savedPrefs.themeId]) this.state.themeId = savedPrefs.themeId;
-            if (savedPrefs.fontSize && FONT_SIZES.some(function(f) { return f.value === savedPrefs.fontSize; })) this.state.fontSize = savedPrefs.fontSize;
-          }
-        } catch(e) {}
-        try {
-          var savedFavs = JSON.parse(localStorage.getItem('drt_favs') || 'null');
-          if (Array.isArray(savedFavs)) this.state.favs = savedFavs;
-        } catch(e) {}
-        try {
-          var savedHistory = JSON.parse(localStorage.getItem('drt_history') || 'null');
-          if (Array.isArray(savedHistory)) this.state.history = savedHistory;
-        } catch(e) {}
 
         if (window.speechSynthesis) {
           window.speechSynthesis.getVoices();
@@ -393,19 +547,86 @@
         });
         
         // CSS has been moved to an external file, so we just build the container now
+        this.applyTheme();
         root.innerHTML = '<div id="app-wrapper"></div>';
         this.render();
+        this.initSwipe();
+        this.initPinch();
+        this.initHistory();
+        this.initServiceWorker();
       },
 
-      saveFavs: function() { try { localStorage.setItem('drt_favs', JSON.stringify(this.state.favs)); } catch(e) {} },
-      saveHistory: function() { try { localStorage.setItem('drt_history', JSON.stringify(this.state.history)); } catch(e) {} },
-      savePrefs: function() { try { localStorage.setItem('drt_prefs', JSON.stringify({themeId: this.state.themeId, fontSize: this.state.fontSize})); } catch(e) {} },
+      // A failed write used to be swallowed entirely, so hitting the storage
+      // quota lost favorites with no indication anything had gone wrong.
+      persist: function(key, value, label) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (e) {
+          console.error('Failed to save ' + key, e);
+          this.flash(label + " could not be saved (storage full)");
+          return false;
+        }
+      },
+      loadPrefs: function() {
+        try {
+          var p = JSON.parse(localStorage.getItem('drt_prefs') || 'null');
+          if (p) {
+            if (p.themeId && THEMES[p.themeId]) this.state.themeId = p.themeId;
+            if (p.fontSize >= MIN_FONT && p.fontSize <= MAX_FONT) this.state.fontSize = p.fontSize;
+          }
+        } catch (e) {}
+        try {
+          var f = JSON.parse(localStorage.getItem('drt_favs') || 'null');
+          if (Array.isArray(f)) {
+            // Older builds stored whole entry copies; keep only what we now need.
+            this.state.favs = f.map(function(x) {
+              if (!x || x.id === undefined) return null;
+              var rec = { id: String(x.id), date_added: x.date_added || '' };
+              if (String(x.id).indexOf('api_') === 0) rec.w = x.w || x.english_word || String(x.id).substring(4);
+              return rec;
+            }).filter(Boolean);
+          }
+        } catch (e) {}
+        try {
+          var h = JSON.parse(localStorage.getItem('drt_history') || 'null');
+          if (Array.isArray(h)) this.state.history = h;
+        } catch (e) {}
+        try {
+          var sp = JSON.parse(localStorage.getItem('drt_script') || 'null');
+          if (sp === 'trad' || sp === 'simp') this.state.scriptPref = sp;
+        } catch (e) {}
+      },
 
-      getCSSVars: function() {
+      saveFavs: function() { return this.persist('drt_favs', this.state.favs, 'Favorites'); },
+      saveHistory: function() { return this.persist('drt_history', this.state.history, 'History'); },
+      savePrefs: function() { return this.persist('drt_prefs', { themeId: this.state.themeId, fontSize: this.state.fontSize }, 'Settings'); },
+
+      // Theme variables live on :root, not on the app container. Scoped to an
+      // inner div they were invisible to `body`, so `background: var(--paper)`
+      // silently fell back to white — visible on every rubber-band overscroll
+      // in the dark themes.
+      applyTheme: function() {
         var s = this.state;
         var t = THEMES[s.themeId];
-        var scale = s.fontSize / 16;
-        return '--ink:'+t.ink+';--ink-l:'+t.inkLight+';--ink-m:'+t.inkMuted+';--paper:'+t.paper+';--pw:'+t.paperWarm+';--pd:'+t.paperDeep+';--accent:'+t.accent+';--ag:'+t.accentGlow+';--gold:'+t.gold+';--gs:'+t.goldSoft+';--bdr:'+t.border+';--card:'+t.cardBg+';--tab:'+t.tabBg+';--fs:'+s.fontSize+'px;--sc:'+scale+';--wodGrad:'+t.wodGrad+';--synBg:'+t.synBg+';--synColor:'+t.synColor+';--synBorder:'+t.synBorder+';--antBg:'+t.antBg+';--antColor:'+t.antColor+';--antBorder:'+t.antBorder+';';
+        var r = document.documentElement.style;
+        var vars = {
+          '--ink': t.ink, '--ink-l': t.inkLight, '--ink-m': t.inkMuted,
+          '--paper': t.paper, '--pw': t.paperWarm, '--pd': t.paperDeep,
+          '--accent': t.accent, '--ag': t.accentGlow, '--gold': t.gold, '--gs': t.goldSoft,
+          '--bdr': t.border, '--card': t.cardBg, '--tab': t.tabBg,
+          '--fs': s.fontSize + 'px', '--sc': String(s.fontSize / 16),
+          '--wodGrad': t.wodGrad,
+          '--synBg': t.synBg, '--synColor': t.synColor, '--synBorder': t.synBorder,
+          '--antBg': t.antBg, '--antColor': t.antColor, '--antBorder': t.antBorder
+        };
+        for (var k in vars) r.setProperty(k, vars[k]);
+        r.background = t.paper;
+        document.documentElement.setAttribute('data-theme', s.themeId);
+
+        // Drives the iOS status bar and the Android address bar.
+        var meta = document.getElementById('theme-color-meta');
+        if (meta) meta.setAttribute('content', t.paper);
       },
 
       render: function() {
@@ -432,28 +653,51 @@
         this.state.focused = true;
         var self = this;
         clearTimeout(this.searchTimeout);
+
         if (!v.trim()) {
-            this.state.results = [];
-            if (this.state.view === "search") {
-                this.state.view = "home";
-                this.render();
-            } else {
-                this.updateSearchUI(v);
-            }
-            return;
+          this.state.results = [];
+          if (this.state.view === "search") {
+            this.state.view = "home";
+            this.render();
+          } else {
+            this.updateSearchUI(v);
+          }
+          return;
         }
+
         this.searchTimeout = setTimeout(function() {
           self.state.results = searchDB(v);
-          if (self.state.view === "search") {
-              self.render();
-          } else {
-              self.updateSearchUI(v);
-          }
+          // On the search screen, repaint only the results list. A full render()
+          // rebuilds #app-wrapper, which destroys and recreates the input — the
+          // caret and focus went with it, dismissing the keyboard mid-word.
+          if (self.state.view === "search") self.paintSearchResults();
+          else self.updateSearchUI(v);
         }, 150);
+      },
+
+      paintSearchResults: function() {
+        var el = document.getElementById('search-results');
+        if (el) el.innerHTML = this.buildSearchResultsHTML();
+      },
+
+      buildSearchResultsHTML: function() {
+        var s = this.state;
+        var n = s.results.length;
+        var html = '<div class="sl" style="padding: 0 0 16px 4px;">' +
+          (n ? (n === 60 ? '60+ results' : n + (n === 1 ? ' result' : ' results')) : 'Search results') + '</div>';
+        if (n > 0) {
+          s.results.forEach(function(r, idx) {
+            html += '<div class="fi af" role="button" tabindex="0" onclick="app.openSearchResult(' + idx + ')"><div class="fi-i"><div class="fi-en">' + escapeHTML(r.label) + '</div><div class="fi-zh">' + escapeHTML(r.sub) + '</div></div><div class="fi-a"><span class="di-tag di-tag-word">' + (r.data._type === 'en-zh' ? 'EN' : '中') + '</span></div></div>';
+          });
+        } else {
+          html += '<div class="es af"><p>No dictionary results found.</p><button class="abtn" style="margin-top:16px" onclick="app.forceTranslate(\'' + safeQuote(s.query) + '\')">🌐 Translate with Google</button></div>';
+        }
+        return html;
       },
 
       showSearchResults: function() {
         if (!this.state.query.trim()) return;
+        if (this.state.view !== "search") this.pushHistory();
         this.state.view = "search";
         this.state.focused = false; // Hide dropdown
         var el = document.getElementById('search-input');
@@ -484,7 +728,6 @@
       goHome: function() {
         this.state.view = "home";
         this.state.sel = null;
-        this.state.wiki = false;
         this.state.focused = false;
         this.state.navStack = [];
         this.state.query = "";
@@ -492,18 +735,365 @@
         this.render();
       },
 
+      // User-initiated back (header button or swipe). Delegates to history so
+      // the app state and the history stack can't drift apart.
       goBack: function() {
+        if (this._histDepth > 0) { history.back(); return; }
+        this.applyBack();
+      },
+
+      applyBack: function() {
         if (this.state.navStack.length > 0) {
           var prev = this.state.navStack.pop();
           this.state.sel = prev;
           this.state.view = "detail";
-          this.state.wiki = false;
-          this.state.detailTab = "cn";
+            this.state.detailTab = "cn";
           this.render();
           window.scrollTo(0, 0);
         } else {
           this.goHome();
         }
+      },
+
+      // ─── Share ───────────────────────────────────────────────────────────
+      shareText: function(w) {
+        var lines = [];
+        if (w._type === "zh-en") {
+          lines.push(w.chinese_traditional + (w.chinese_simplified && w.chinese_simplified !== w.chinese_traditional ? ' / ' + w.chinese_simplified : ''));
+          if (w.pinyin) lines.push(pinyinTone(w.pinyin));
+          (w.definitions || []).slice(0, 4).forEach(function(d, i) { lines.push((i + 1) + '. ' + d); });
+        } else {
+          lines.push(w.english_word + (w.phonetic_en ? '  ' + w.phonetic_en : ''));
+          (w.zh_trans || []).slice(0, 4).forEach(function(t) { lines.push(t); });
+          if (!(w.zh_trans || []).length) (w.definitions || []).slice(0, 3).forEach(function(d) { lines.push(d); });
+        }
+        return lines.join('\n');
+      },
+
+      shareWord: function(id) {
+        var w = BY_ID.get(Number(id)) || this.state.sel;
+        if (!w) return;
+        var title = w._type === "zh-en" ? w.chinese_traditional : w.english_word;
+        var text = this.shareText(w);
+        var url = location.origin + location.pathname + '#/w/' + encodeURIComponent(w.id);
+        var self = this;
+
+        if (navigator.share) {
+          navigator.share({ title: 'Dr. 張簡 — ' + title, text: text, url: url })
+            .catch(function(err) {
+              // AbortError just means the user dismissed the sheet.
+              if (err && err.name !== 'AbortError') self.copyShare(text + '\n' + url);
+            });
+        } else {
+          this.copyShare(text + '\n' + url);
+        }
+      },
+
+      copyShare: function(payload) {
+        var self = this;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(payload).then(
+            function() { self.flash("Copied — ready to paste"); },
+            function() { self.flash("Could not share"); }
+          );
+        } else {
+          this.flash("Sharing not supported here");
+        }
+      },
+
+      // ─── Character decomposition ─────────────────────────────────────────
+      // Each character of a compound, with its own reading and gloss, so 電腦
+      // can be read as 電 "electric" + 腦 "brain".
+      decompose: function(w) {
+        if (!w || w._type !== "zh-en") return [];
+        // Follow the headword's script so the breakdown doesn't show 電腦 while
+        // the word above it reads 电脑.
+        var useSimp = this.state.scriptPref === 'simp' &&
+                      w.chinese_simplified && w.chinese_simplified !== w.chinese_traditional;
+        var source = useSimp ? w.chinese_simplified : w.chinese_traditional;
+        var chars = String(source || "").split('');
+        var syllables = String(w.pinyin || "").trim().split(/\s+/);
+        var out = [];
+        for (var i = 0; i < chars.length; i++) {
+          var ch = chars[i];
+          if (!/[一-鿿㐀-䶿豈-﫿]/.test(ch)) continue;
+          var entry = useSimp ? (BY_ZH_S.get(ch) || BY_ZH.get(ch)) : (BY_ZH.get(ch) || BY_ZH_S.get(ch));
+          out.push({
+            char: ch,
+            pinyin: pinyinTone(syllables[i] || (entry ? entry.pinyin : "") || ""),
+            gloss: entry ? String(entry.english_word).split(/[;,]/)[0].slice(0, 26) : "",
+            entry: entry || null
+          });
+        }
+        return out;
+      },
+
+      // ─── Traditional / simplified ────────────────────────────────────────
+      toggleScript: function() {
+        this.state.scriptPref = this.state.scriptPref === 'simp' ? 'trad' : 'simp';
+        this.persist('drt_script', this.state.scriptPref, 'Script preference');
+        this.render();
+      },
+
+      // ─── Offline ─────────────────────────────────────────────────────────
+      initServiceWorker: function() {
+        if (!('serviceWorker' in navigator)) return;
+        var self = this;
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('sw.js').then(function(reg) {
+            reg.addEventListener('updatefound', function() {
+              var sw = reg.installing;
+              if (!sw) return;
+              sw.addEventListener('statechange', function() {
+                // Only prompt for a *replacement*; the very first install has no
+                // controller and is not an update the user needs to know about.
+                if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                  self.state.updateReady = true;
+                  self.flash("Update ready — reopen the app to apply");
+                }
+              });
+            });
+          }).catch(function(err) {
+            console.warn('Service worker registration failed', err);
+          });
+        });
+      },
+
+      // ─── Browser / hardware back ─────────────────────────────────────────
+      // Every forward navigation pushes a history entry so the Android back
+      // button, the desktop Back button, and Safari's own edge swipe all land on
+      // the previous word instead of leaving the app. The custom swipe gesture
+      // routes through history.back() too, so popstate stays the single place
+      // where a back actually happens and the two can't double-fire.
+      _histDepth: 0,
+
+      initHistory: function() {
+        var self = this;
+        try { history.replaceState({ drt: 0 }, ''); } catch (e) {}
+        window.addEventListener('popstate', function() {
+          if (self._histDepth > 0) self._histDepth--;
+          self.applyBack();
+        });
+      },
+
+      pushHistory: function() {
+        this._histDepth++;
+        try { history.pushState({ drt: this._histDepth }, ''); } catch (e) {}
+      },
+
+      // ─── Pinch to resize text ────────────────────────────────────────────
+      // Native pinch zoom is disabled on purpose (see the viewport meta), so the
+      // gesture is bound to the app's own font scale instead of being dead.
+      // WebKit's gesture events cover iOS; the touch fallback covers everything
+      // else that reports two touch points.
+      initPinch: function() {
+        var self = this;
+        var base = 0, active = false;
+
+        function begin() { base = self.state.fontSize; active = true; }
+        function apply(scale) {
+          if (!active) return;
+          var next = Math.round(base * scale);
+          next = Math.max(MIN_FONT, Math.min(MAX_FONT, next));
+          if (next !== self.state.fontSize) {
+            self.state.fontSize = next;
+            self.applyTheme();
+            self.showZoomHint(next);
+          }
+        }
+        function end() {
+          if (!active) return;
+          active = false;
+          self.savePrefs();
+          self.syncFontButtons();
+          self.hideZoomHint();
+        }
+
+        // iOS Safari / standalone
+        document.addEventListener('gesturestart', function(e) { e.preventDefault(); begin(); }, { passive: false });
+        document.addEventListener('gesturechange', function(e) { e.preventDefault(); apply(e.scale); }, { passive: false });
+        document.addEventListener('gestureend', function(e) { e.preventDefault(); end(); }, { passive: false });
+
+        // Two-finger fallback for browsers without gesture events
+        var startDist = 0;
+        function dist(t) {
+          var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY;
+          return Math.sqrt(dx * dx + dy * dy);
+        }
+        document.addEventListener('touchstart', function(e) {
+          if (e.touches.length === 2 && !('ongesturestart' in window)) {
+            startDist = dist(e.touches); begin();
+          }
+        }, { passive: true });
+        document.addEventListener('touchmove', function(e) {
+          if (active && e.touches.length === 2 && startDist > 0) {
+            e.preventDefault();
+            apply(dist(e.touches) / startDist);
+          }
+        }, { passive: false });
+        document.addEventListener('touchend', function(e) {
+          if (active && e.touches.length < 2) { startDist = 0; end(); }
+        }, { passive: true });
+      },
+
+      showZoomHint: function(px) {
+        var el = document.getElementById('zoom-hint');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'zoom-hint';
+          el.className = 'zoom-hint';
+          document.body.appendChild(el);
+        }
+        var label = 'Text size';
+        for (var i = 0; i < FONT_SIZES.length; i++) if (FONT_SIZES[i].value === px) label = FONT_SIZES[i].label;
+        el.textContent = label + ' · ' + px + 'px';
+        el.classList.add('on');
+      },
+
+      hideZoomHint: function() {
+        var el = document.getElementById('zoom-hint');
+        if (el) el.classList.remove('on');
+      },
+
+      syncFontButtons: function() {
+        var val = this.state.fontSize;
+        FONT_SIZES.forEach(function(fs) {
+          var btn = document.getElementById('fs-btn-' + fs.value);
+          if (btn) {
+            btn.className = 'fs-btn ' + (val === fs.value ? 'sel' : '');
+            btn.setAttribute('aria-pressed', val === fs.value ? 'true' : 'false');
+          }
+        });
+      },
+
+      // The six most recently opened words, resolved from history and de-duped.
+      recentWords: function(n) {
+        var out = [], seen = {};
+        for (var i = 0; i < this.state.history.length && out.length < n; i++) {
+          var h = this.state.history[i];
+          if (!h || h.wordId === undefined || seen[h.wordId]) continue;
+          seen[h.wordId] = 1;
+          var w = BY_ID.get(Number(h.wordId));
+          if (!w && String(h.wordId).indexOf('api_') === 0) w = this.makeApiWord(String(h.wordId).substring(4));
+          if (w) out.push(w);
+        }
+        return out;
+      },
+
+      // Jump from the home screen straight to the expanded history panel.
+      openHistory: function() {
+        this.state.showHistorySettings = true;
+        this.setView('settings');
+        var self = this;
+        requestAnimationFrame(function() {
+          var el = document.getElementById('hist-section');
+          if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          var wrap = document.getElementById('hist-body-wrap');
+          if (wrap) wrap.innerHTML = self.buildHistorySettingsHTML();
+        });
+      },
+
+      // Label for wherever "back" will take us — used by both the header
+      // button and the swipe-back reveal.
+      getBackLabel: function(max) {
+        var s = this.state, label;
+        if (s.navStack.length > 0) {
+          var p = s.navStack[s.navStack.length - 1];
+          label = (p._type === 'zh-en' ? (p.chinese_traditional || p.english_word) : p.english_word) || 'Back';
+        } else {
+          label = 'Home';
+        }
+        if (max && label.length > max) label = label.substring(0, max) + '…';
+        return label;
+      },
+
+      canGoBack: function() {
+        var s = this.state;
+        if (!s.isLoaded) return false;
+        return s.navStack.length > 0 || s.view !== 'home';
+      },
+
+      // ─── Swipe from the left edge to go back ─────────────────────────────
+      // Standalone iOS gives us no native edge-swipe (there are no history
+      // entries to pop), so we drive the gesture ourselves.
+      initSwipe: function() {
+        var self = this;
+        var EDGE = 32;      // px from the left edge where a swipe may start
+        var COMMIT = 0.32;  // fraction of the page width needed to commit
+        var FLICK = 0.5;    // px/ms of recent travel that counts as a flick
+        var FLICK_MIN = 48; // ...but a flick still has to cover this much ground,
+                            // so a stray few-px slide near the edge can't navigate
+        var sw = { on: false, track: false, x0: 0, y0: 0, t0: 0, dx: 0, w: 0, lastDx: 0, lastT: 0, vel: 0 };
+
+        function page() { return document.getElementById('page-content'); }
+        function reveal() { return document.getElementById('swipe-backdrop'); }
+
+        function settle(commit) {
+          var p = page(), b = reveal();
+          if (!p) return;
+          p.classList.remove('swiping');
+          p.classList.add('settling');
+          p.style.transform = commit ? 'translateX(100%)' : '';
+          setTimeout(function() {
+            if (commit) {
+              self.goBack();          // render() replaces #page-content wholesale
+            } else if (p.parentNode) {
+              p.classList.remove('settling');
+              p.style.transform = '';
+            }
+            if (b) b.classList.remove('on');
+          }, 260);
+        }
+
+        document.addEventListener('touchstart', function(e) {
+          if (sw.on || e.touches.length !== 1) return;
+          if (!self.canGoBack()) return;
+          var t = e.touches[0];
+          if (t.clientX > EDGE) return;
+          var p = page();
+          sw.on = true; sw.track = false; sw.dx = 0;
+          sw.x0 = t.clientX; sw.y0 = t.clientY; sw.t0 = Date.now();
+          sw.lastDx = 0; sw.lastT = sw.t0; sw.vel = 0;
+          sw.w = (p && p.offsetWidth) || window.innerWidth;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', function(e) {
+          if (!sw.on) return;
+          var t = e.touches[0];
+          var dx = t.clientX - sw.x0, dy = t.clientY - sw.y0;
+          if (!sw.track) {
+            // Let vertical scrolling win if that's clearly the intent.
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 6) { sw.on = false; return; }
+            if (dx < 10) return;
+            sw.track = true;
+            var p = page(), b = reveal();
+            if (p) { p.classList.remove('settling'); p.classList.add('swiping'); }
+            if (b) b.classList.add('on');
+          }
+          e.preventDefault(); // also suppresses Safari's own edge-swipe in browser mode
+          sw.dx = Math.max(0, Math.min(dx, sw.w));
+          // Sample velocity over the most recent movement only — averaging across
+          // the whole gesture would let a long slow drag inherit a fast start.
+          var nt = Date.now(), dt = nt - sw.lastT;
+          if (dt > 0) { sw.vel = (sw.dx - sw.lastDx) / dt; sw.lastDx = sw.dx; sw.lastT = nt; }
+          var pg = page();
+          if (pg) pg.style.transform = 'translateX(' + sw.dx + 'px)';
+        }, { passive: false });
+
+        function endSwipe(cancelled) {
+          if (!sw.on) return;
+          var tracked = sw.track;
+          sw.on = false; sw.track = false;
+          if (!tracked) return;
+          // touchcancel means the system took over (call, Control Center, notch
+          // pull). Always snap back — never navigate on an interrupted gesture.
+          if (cancelled) { settle(false); return; }
+          settle(sw.dx > sw.w * COMMIT || (sw.dx > FLICK_MIN && sw.vel > FLICK));
+        }
+        // Wrapped, not passed directly: the TouchEvent would otherwise arrive as
+        // `cancelled` and every touchend would read as an interrupted gesture.
+        document.addEventListener('touchend', function() { endSwipe(false); }, { passive: true });
+        document.addEventListener('touchcancel', function() { endSwipe(true); }, { passive: true });
       },
 
       addHistory: function(type, label, sub, wordId) {
@@ -514,13 +1104,13 @@
       },
 
       openWord: function(w) {
+        if (this.state.view !== "detail" || !this.state.sel || this.state.sel.id !== w.id) this.pushHistory();
         if (this.state.view === "detail" && this.state.sel && this.state.sel.id !== w.id) {
           this.state.navStack.push(this.state.sel);
           if (this.state.navStack.length > 50) this.state.navStack.shift();
         }
         this.state.sel = w;
         this.state.view = "detail";
-        this.state.wiki = false;
         this.state.focused = false;
         this.state.detailTab = "cn";
         
@@ -532,32 +1122,35 @@
         this.state.zhApiTrans = null;
         this.state.zhApiTransLoading = false;
         this.state.zhApiTransIsEn = false;
-        
+        this.state.zhApiTransError = false;
+
         var sub = (w._type === "en-zh" || w._type === "api-only")
           ? (w.phonetic_en ? w.phonetic_en : ((w.zh_trans && w.zh_trans.length > 0) ? w.zh_trans[0] : ""))
           : (w.chinese_traditional + ' · ' + pinyinTone(w.pinyin));
           
         this.addHistory("word", w.english_word, sub, w.id);
+        this._reqSeq++;          // invalidate any in-flight request for the previous word
         this.render();
         window.scrollTo(0, 0);
-        
-        this.fetchEnDict(w.english_word);
-        if (w._type === "api-only") {
-          this.fetchZhTrans(w.english_word);
-        }
+
+        this.fetchEnDict(w);
+        if (w._type === "api-only") this.fetchZhTrans(w.english_word);
+      },
+
+      // A word we have no local entry for, shown via the online translation path.
+      makeApiWord: function(word) {
+        return {
+          id: 'api_' + word, _type: "api-only", english_word: word,
+          chinese_traditional: "", chinese_simplified: "", pinyin: "", phonetic_en: "",
+          definitions: [], zh_trans: [], exchange: "", freq: 0, tags: "", collins: 0,
+          related_words: searchDB(word).slice(0, 5)
+        };
       },
 
       openWordById: function(id) {
-        var w = DICTIONARY.find(function(x) { return x.id == id; }) || this.state.favs.find(function(x) { return x.id == id; });
-        if (!w && String(id).startsWith('api_')) {
-          var word = String(id).substring(4);
-          w = {
-            id: id, _type: "api-only", english_word: word, chinese_traditional: "", chinese_simplified: "",
-            pinyin: "", phonetic_en: "", part_of_speech: [], definitions: [], synonyms: [], antonyms: [],
-            idioms: [], zh_trans: [], exchange: "", related_words: searchDB(word).slice(0, 5)
-          };
-        }
-        if(w) this.openWord(w);
+        var w = BY_ID.get(Number(id));
+        if (!w && String(id).indexOf('api_') === 0) w = this.makeApiWord(String(id).substring(4));
+        if (w) this.openWord(w);
       },
 
       openSearchResult: function(idx) {
@@ -570,51 +1163,42 @@
         this.openWordById(h.wordId);
       },
       
-      openFromIdiomIndex: function(wordId, index) {
-        var w = DICTIONARY.find(function(x) { return x.id == wordId; });
-        if (w && w.idioms && w.idioms[index]) {
-            this.flash('Selected Idiom: ' + w.idioms[index].en);
-        }
-      },
-
       forceTranslate: function(term) {
         if (!term || !term.trim()) return;
         var clean = term.trim();
-        var mockWord = {
-            id: 'api_' + clean,
-            _type: "api-only",
-            english_word: clean,
-            chinese_traditional: "",
-            chinese_simplified: "",
-            pinyin: "",
-            phonetic_en: "",
-            part_of_speech: [],
-            definitions: [],
-            synonyms: [],
-            antonyms: [],
-            idioms: [],
-            zh_trans: [],
-            exchange: "",
-            related_words: searchDB(clean).slice(0, 5)
-        };
-        this.openWord(mockWord);
+        this.openWord(this.makeApiWord(clean));
         this.flash('Translating "' + clean + '"…');
       },
 
-      isFav: function(id) { return this.state.favs.some(function(f) { return f.id == id; }); },
+      isFav: function(id) {
+        var key = String(id);
+        return this.state.favs.some(function(f) { return String(f.id) === key; });
+      },
+
+      // Favorites store {id, date_added} rather than a copy of the entry. Deep
+      // copies carried the search-index fields and, for online-translation
+      // entries, five whole dictionary objects under related_words — enough to
+      // blow the ~5MB quota, which saveFavs then swallowed silently.
+      resolveFav: function(f) {
+        var w = BY_ID.get(Number(f.id));
+        if (w) return w;
+        if (f.w) return this.makeApiWord(f.w);
+        return null;
+      },
 
       toggleFav: function(id) {
-        var w = DICTIONARY.find(function(x) { return x.id == id; }) || this.state.sel;
-        var isCurrentlyFav = this.isFav(id);
-        if (isCurrentlyFav) {
-          this.state.favs = this.state.favs.filter(function(x) { return x.id != id; });
+        var key = String(id);
+        if (this.isFav(key)) {
+          this.state.favs = this.state.favs.filter(function(x) { return String(x.id) !== key; });
           this.flash("Removed from favorites");
         } else {
-          var copy = {};
-          for (var k in w) copy[k] = w[k];
-          copy.date_added = new Date().toISOString();
-          this.state.favs.push(copy);
-          this.flash("Added to favorites ★");
+          var w = BY_ID.get(Number(id)) ||
+                  (this.state.sel && String(this.state.sel.id) === key ? this.state.sel : null);
+          if (!w) { this.flash("Could not save that word"); return; }
+          var rec = { id: key, date_added: new Date().toISOString() };
+          if (w._type === "api-only") rec.w = w.english_word;
+          this.state.favs.push(rec);
+          this.flash("Added to favorites \u2605");
         }
         this.saveFavs();
         if (this.state.view === "favorites") {
@@ -622,15 +1206,18 @@
         } else {
           var starBtn = document.getElementById('star-btn-' + id);
           if (starBtn) {
-            var nowFav = this.isFav(id);
+            var nowFav = this.isFav(key);
             starBtn.className = 'abtn ' + (nowFav ? 'on' : '');
-            starBtn.innerHTML = I.Star(nowFav) + ' ' + (nowFav ? 'Saved' : 'Save');
+            starBtn.setAttribute('aria-pressed', nowFav ? 'true' : 'false');
+            starBtn.setAttribute('aria-label', nowFav ? 'Remove from favorites' : 'Save to favorites');
+            starBtn.innerHTML = I.Star(nowFav);
           }
         }
       },
 
       speak: function(text, lang, btnElement) {
-        if (!window.speechSynthesis || !text) return;
+        if (!text) return;
+        if (!window.speechSynthesis) { this.flash("Speech is not available on this device"); return; }
         window.speechSynthesis.cancel();
         var u = new SpeechSynthesisUtterance(text);
         u.rate = 0.9;
@@ -653,7 +1240,10 @@
             u.voice = zhVoice;
             u.lang = zhVoice.lang;
           } else {
+            // No Chinese voice installed: the utterance is silent, so say so
+            // rather than letting the button appear broken.
             u.lang = "zh-TW";
+            if (voices.length) this.flash("No Chinese voice installed on this device");
           }
         } else {
           u.lang = "en-US";
@@ -662,157 +1252,203 @@
       },
 
       copyWord: function(id) {
-        var w = DICTIONARY.find(function(x) { return x.id == id; }) || this.state.sel;
+        var w = BY_ID.get(Number(id)) || this.state.sel;
         if (!w) return;
         var text;
         if (w._type === "en-zh" || w._type === "api-only") {
-          text = w.english_word + (w.phonetic_en ? ' ' + w.phonetic_en : '') + (w.zh_trans && w.zh_trans.length ? ' — ' + w.zh_trans.join('; ') : '');
+          text = w.english_word + (w.phonetic_en ? ' ' + w.phonetic_en : '') +
+                 (w.zh_trans && w.zh_trans.length ? ' \u2014 ' + w.zh_trans.join('; ') : '');
         } else {
-          text = w.english_word + ' (' + w.chinese_traditional + ') — ' + pinyinTone(w.pinyin);
+          text = w.english_word + ' (' + w.chinese_traditional + ') \u2014 ' + pinyinTone(w.pinyin);
         }
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(text);
-          this.flash("Copied to clipboard");
+        var self = this;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(
+            function() { self.flash("Copied to clipboard"); },
+            function() { self.flash("Could not copy"); }
+          );
+        } else {
+          // navigator.clipboard is undefined outside a secure context; without
+          // this branch the button silently did nothing over plain http.
+          try {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.cssText = 'position:absolute;left:-9999px;top:0';
+            document.body.appendChild(ta);
+            ta.select();
+            var ok = document.execCommand && document.execCommand('copy');
+            document.body.removeChild(ta);
+            this.flash(ok ? "Copied to clipboard" : "Could not copy");
+          } catch (e) {
+            this.flash("Could not copy");
+          }
         }
+      },
+
+      // Every network-backed panel on the detail view is keyed to this counter.
+      // openWord() bumps it, and each callback drops its result if the counter
+      // has moved on — otherwise tapping A then B quickly renders A's data
+      // underneath B's headword.
+      _reqSeq: 0,
+
+      GTX: 'https://translate.googleapis.com/translate_a/single?client=gtx&dt=t',
+
+      translateText: function(text, target) {
+        var url = this.GTX + '&sl=auto&tl=' + target + '&q=' + encodeURIComponent(text);
+        return fetch(url)
+          .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
+          .then(function(data) {
+            if (!data || !data[0]) throw new Error('unexpected response shape');
+            return data[0].map(function(seg) { return seg[0]; }).join('');
+          });
       },
 
       fetchZhTrans: function(word) {
         if (!word) return;
         var clean = word.trim();
+        var seq = this._reqSeq;
+        var self = this;
+
         this.state.zhApiTransLoading = true;
         this.state.zhApiTrans = null;
-        var c = document.getElementById('zhtrans-container');
-        if (c) c.innerHTML = this.buildZhTransHTML();
-        
-        var self = this;
-        var isZh = /[\u4e00-\u9fff]/.test(clean);
-        var tl = isZh ? 'en' : 'zh-TW';
-        var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' + tl + '&dt=t&q=' + encodeURIComponent(clean);
-        
-        fetch(url)
-          .then(function(r) { return r.ok ? r.json() : Promise.reject('failed'); })
-          .then(function(data) {
-            if (data && data[0]) {
-              var trans = data[0].map(function(item) { return item[0]; }).join('');
-              if (trans.toLowerCase() !== clean.toLowerCase()) {
-                self.state.zhApiTrans = trans;
-                self.state.zhApiTransIsEn = isZh; // tracks if generated translation is English
-              }
+        this.state.zhApiTransError = false;
+        this.paintZhTrans();
+
+        var isZh = /[一-鿿]/.test(clean);
+        this.translateText(clean, isZh ? 'en' : 'zh-TW')
+          .then(function(trans) {
+            if (seq !== self._reqSeq) return;
+            if (trans && trans.toLowerCase() !== clean.toLowerCase()) {
+              self.state.zhApiTrans = trans;
+              self.state.zhApiTransIsEn = isZh;
             }
             self.state.zhApiTransLoading = false;
-            var c = document.getElementById('zhtrans-container');
-            if (c) c.innerHTML = self.buildZhTransHTML();
+            self.paintZhTrans();
           })
-          .catch(function() {
+          .catch(function(err) {
+            if (seq !== self._reqSeq) return;
+            console.error('Translation failed', err);
             self.state.zhApiTransLoading = false;
-            var c = document.getElementById('zhtrans-container');
-            if (c) c.innerHTML = self.buildZhTransHTML();
+            self.state.zhApiTransError = true;   // surfaced, not swallowed
+            self.paintZhTrans();
           });
+      },
+
+      paintZhTrans: function() {
+        var c = document.getElementById('zhtrans-container');
+        if (c) c.innerHTML = this.buildZhTransHTML();
+      },
+
+      paintEnDict: function() {
+        var c = document.getElementById('endict-container');
+        if (c) c.innerHTML = this.buildEnDictHTML();
       },
 
       buildZhTransHTML: function() {
         var s = this.state;
         if (s.zhApiTransLoading) {
-          return '<div class="ds af d1"><div class="dst">🌐 Web Translation</div><div style="padding:16px;text-align:center;color:var(--ink-m);font-size:13px">Fetching translation…</div></div>';
+          return '<div class="ds af d1"><div class="dst">\u{1F310} Web Translation</div><div style="padding:16px;text-align:center;color:var(--ink-m);font-size:calc(var(--fs) - 3px)">Fetching translation…</div></div>';
+        }
+        if (s.zhApiTransError) {
+          return '<div class="ds af d1"><div class="dst">\u{1F310} Web Translation</div><div style="padding:16px;text-align:center;color:var(--ink-m);font-size:calc(var(--fs) - 3px)">Translation unavailable offline.</div></div>';
         }
         if (s.zhApiTrans) {
           var lang = s.zhApiTransIsEn ? 'en' : 'zh';
-          var textHTML = s.zhApiTransIsEn ? escapeHTML(s.zhApiTrans) : linkify(s.zhApiTrans); // False by default, phrases stay joined
-          return '<div class="ds af d1"><div class="dst">🌐 Web Translation</div><div class="ic"><div class="ic-line"><span class="ic-line-text ic-zh" style="font-family: var(--font-' + (s.zhApiTransIsEn ? 'sans' : 'zh') + ')">' + textHTML + '</span>' + spkBtn(s.zhApiTrans, lang) + '</div></div></div>';
+          var textHTML = s.zhApiTransIsEn ? escapeHTML(s.zhApiTrans) : linkify(s.zhApiTrans);
+          var langAttr = s.zhApiTransIsEn ? '' : ' lang="zh-Hant"';
+          return '<div class="ds af d1"><div class="dst">\u{1F310} Web Translation</div><div class="ic"><div class="ic-line"><span class="ic-line-text ic-zh"' + langAttr + ' style="font-family: var(--font-' + (s.zhApiTransIsEn ? 'sans' : 'zh') + ')">' + textHTML + '</span>' + spkBtn(s.zhApiTrans, lang) + '</div></div></div>';
         }
         return '';
       },
 
-      translateEnDefs: function(dictData) {
+      // Each definition is translated in its own request. Batching them into one
+      // request joined by blank lines and splitting the reply back apart looked
+      // cheaper, but the service does not preserve those boundaries, so the
+      // Chinese regularly landed under the wrong English definition.
+      translateEnDefs: function(dictData, seq) {
         if (!dictData || !dictData.meanings) return;
-        var defsToTranslate = [];
-        
-        // Gather the first few definitions so we don't hit URL length limits
+        var defs = [];
         dictData.meanings.forEach(function(m) {
-          if (m.definitions) {
-            m.definitions.forEach(function(d) {
-              if (d.definition && defsToTranslate.length < 8) {
-                defsToTranslate.push(d.definition);
-              }
-            });
-          }
+          (m.definitions || []).forEach(function(d) {
+            if (d.definition && defs.length < 6 && defs.indexOf(d.definition) === -1) defs.push(d.definition);
+          });
         });
+        if (!defs.length) return;
 
-        if (defsToTranslate.length === 0) return;
-
-        // Join definitions with double newline to keep them separate in Google Translate
-        var joinedText = defsToTranslate.join('\n\n');
-        var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-TW&dt=t&q=' + encodeURIComponent(joinedText);
         var self = this;
+        Promise.all(defs.map(function(text) {
+          return self.translateText(text, 'zh-TW')
+            .then(function(zh) { return { key: text, zh: zh }; })
+            .catch(function() { return null; });
+        })).then(function(pairs) {
+          if (seq !== self._reqSeq) return;
+          var got = false;
+          pairs.forEach(function(pr) {
+            if (pr && pr.zh) { self.state.enDictTranslations[pr.key] = pr.zh.trim(); got = true; }
+          });
+          if (got) self.paintEnDict();
+        });
+      },
 
-        fetch(url)
-          .then(function(r) { return r.ok ? r.json() : Promise.reject('failed'); })
-          .then(function(data) {
-            if (data && data[0]) {
-              // Reconstruct the translated chunk
-              var translatedFull = data[0].map(function(item) { return item[0]; }).join('');
-              var translatedArray = translatedFull.split(/\n\n/);
-              
-              // Map back to original definitions
-              defsToTranslate.forEach(function(original, idx) {
-                if (translatedArray[idx]) {
-                  self.state.enDictTranslations[original] = translatedArray[idx].trim();
-                }
-              });
-              
-              // Force re-render of dictionary block to show new Chinese definitions
-              var c = document.getElementById('endict-container');
-              if (c) c.innerHTML = self.buildEnDictHTML();
-            }
-          })
-          .catch(function(e) { console.error("Definition translation failed", e); });
+      // The dictionary API takes a single English word. A CC-CEDICT headword's
+      // gloss is frequently a whole phrase, and the previous code stripped every
+      // non-letter — including spaces — turning "percent (Tw)" into "percenttw"
+      // and firing a junk request for 83% of entries.
+      enDictQueryFor: function(w) {
+        if (!w) return "";
+        if (w._type === "en-zh" || w._type === "api-only") {
+          var head = String(w.english_word || "").toLowerCase().trim();
+          return /^[a-z][a-z'-]*$/.test(head) ? head : "";
+        }
+        var gloss = String(w.english_word || "").toLowerCase().trim();
+        gloss = gloss.replace(/\s*\(.*?\)\s*/g, ' ').trim();   // drop "(Tw)" style notes
+        return /^[a-z][a-z'-]*$/.test(gloss) ? gloss : "";
       },
 
       fetchEnDict: function(word) {
-        if (!word) return;
-        var clean = word.toLowerCase().trim().replace(/[^a-z'-]/g, '');
-        if (!clean || clean.length < 2) return;
-        if (this.enDictCache[clean]) {
+        var clean = typeof word === 'string' ? word : this.enDictQueryFor(word);
+        var seq = this._reqSeq;
+        var self = this;
+
+        if (!clean || clean.length < 2) {
+          this.state.enDict = null;
+          this.state.enDictLoading = false;
+          this.paintEnDict();
+          return;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(this.enDictCache, clean)) {
           this.state.enDict = this.enDictCache[clean];
           this.state.enDictWord = clean;
           this.state.enDictLoading = false;
-          var c = document.getElementById('endict-container');
-          if (c) c.innerHTML = this.buildEnDictHTML();
-          
-          // Trigger translation of definitions if not already cached
-          if (Object.keys(this.state.enDictTranslations).length === 0) {
-             this.translateEnDefs(this.state.enDict);
-          }
+          this.paintEnDict();
+          if (this.state.enDict) this.translateEnDefs(this.state.enDict, seq);
           return;
         }
+
         this.state.enDictLoading = true;
         this.state.enDictWord = clean;
         this.state.enDict = null;
-        var c = document.getElementById('endict-container');
-        if (c) c.innerHTML = this.buildEnDictHTML();
-        var self = this;
+        this.paintEnDict();
+
         fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(clean))
-          .then(function(r) { return r.ok ? r.json() : Promise.reject('not found'); })
+          .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('not found')); })
           .then(function(data) {
-            if (data && data.length > 0) {
-              self.enDictCache[clean] = data[0];
-              self.state.enDict = data[0];
-              // Fire off translation fetcher
-              self.translateEnDefs(data[0]);
-            } else {
-              self.enDictCache[clean] = null;
-              self.state.enDict = null;
-            }
+            var entry = (data && data.length) ? data[0] : null;
+            self.enDictCache[clean] = entry;
+            if (seq !== self._reqSeq) return;
+            self.state.enDict = entry;
             self.state.enDictLoading = false;
-            var c = document.getElementById('endict-container');
-            if (c) c.innerHTML = self.buildEnDictHTML();
+            self.paintEnDict();
+            if (entry) self.translateEnDefs(entry, seq);
           })
           .catch(function() {
             self.enDictCache[clean] = null;
+            if (seq !== self._reqSeq) return;
             self.state.enDict = null;
             self.state.enDictLoading = false;
-            var c = document.getElementById('endict-container');
-            if (c) c.innerHTML = self.buildEnDictHTML();
+            self.paintEnDict();
           });
       },
 
@@ -882,7 +1518,7 @@
           });
         }
         if (d.sourceUrls && d.sourceUrls.length > 0) {
-          html += '<div style="font-size:11px;color:var(--ink-m);margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">Source: <a href="' + escapeHTML(d.sourceUrls[0]) + '" target="_blank" style="color:var(--accent)">' + escapeHTML(d.sourceUrls[0]) + '</a></div>';
+          html += '<div style="font-size:11px;color:var(--ink-m);margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">Source: <a href="' + escapeHTML(d.sourceUrls[0]) + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">' + escapeHTML(d.sourceUrls[0]) + '</a></div>';
         }
         html += '</div>';
         return html;
@@ -895,30 +1531,37 @@
       lookupWord: function(term) {
         if (!term || !term.trim()) return;
         var t = term.trim();
-        var tLow = t.toLowerCase();
-        var isEnglish = /^[a-zA-Z'-]+$/.test(t);
-        
-        // 1. Exact match on English headword
-        var match = DICTIONARY.find(function(w) { return w._enLow === tLow; });
-        
-        // 2. Exact match on Chinese
-        if (!match) match = DICTIONARY.find(function(w) { return w.chinese_traditional === t || w.chinese_simplified === t; });
-        
-        // 3. Partial match on English headword (e.g., clicking 'run' finds 'runs')
-        if (!match) match = DICTIONARY.find(function(w) { return w._enLow.startsWith(tLow) && w._enLow.length < tLow.length + 4; });
-        
-        // 4. Single Chinese character fallback
-        if (!match && t.length === 1 && /[\u4e00-\u9fff]/.test(t)) {
-          match = DICTIONARY.find(function(w) { return w.chinese_traditional && w.chinese_traditional.indexOf(t) !== -1 && w.chinese_traditional.length <= 2; });
-          if (!match) match = DICTIONARY.find(function(w) { return w.chinese_traditional === t; });
+        var tLow = norm(t);
+
+        // Exact headword, English then Chinese. Both maps hold the most common
+        // homograph, so 和 opens "and" rather than the surname.
+        var match = BY_EN.get(tLow) || BY_ZH.get(t) || BY_ZH_S.get(t);
+
+        // Inflected form: "running" -> "run". The dictionary's own exchange data
+        // covers most of these, but a short prefix probe is a cheap fallback.
+        if (!match && /^[a-z'-]+$/.test(tLow) && tLow.length > 3) {
+          for (var cut = 1; cut <= 3 && !match; cut++) {
+            var stem = tLow.slice(0, -cut);
+            if (stem.length >= 3) match = BY_EN.get(stem);
+          }
         }
 
-        if (match) {
-          this.openWord(match);
-        } else {
-          // If NOT found in dictionary, fallback to translating it natively with Google Translate fallback!
-          this.forceTranslate(t);
+        // Single Chinese character with no entry of its own: fall back to the
+        // shortest word containing it.
+        if (!match && t.length === 1 && /[一-鿿]/.test(t)) {
+          var bestLen = 99;
+          for (var i = 0; i < DICTIONARY.length; i++) {
+            var w = DICTIONARY[i];
+            if (w._type === "zh-en" && w.chinese_traditional.indexOf(t) !== -1 &&
+                w.chinese_traditional.length < bestLen) {
+              match = w; bestLen = w.chinese_traditional.length;
+              if (bestLen === 1) break;
+            }
+          }
         }
+
+        if (match) this.openWord(match);
+        else this.forceTranslate(t);
       },
 
       clearHistory: function(e) {
@@ -943,8 +1586,7 @@
       setThemeId: function(id) {
         this.state.themeId = id;
         this.savePrefs();
-        var appCont = document.getElementById('app-container');
-        if (appCont) appCont.style.cssText = this.getCSSVars();
+        this.applyTheme();
         Object.values(THEMES).forEach(function(th) {
           var card = document.getElementById('theme-card-' + th.id);
           if (card) {
@@ -967,15 +1609,12 @@
       setFontSize: function(val) {
         this.state.fontSize = val;
         this.savePrefs();
-        var appCont = document.getElementById('app-container');
-        if (appCont) appCont.style.cssText = this.getCSSVars();
-        FONT_SIZES.forEach(function(fs) {
-           var btn = document.getElementById('fs-btn-' + fs.value);
-           if (btn) btn.className = 'fs-btn ' + (val === fs.value ? 'sel' : '');
-        });
+        this.applyTheme();
+        this.syncFontButtons();
       },
 
-      setView: function(v) { 
+      setView: function(v) {
+        if (v !== this.state.view && v !== 'home') this.pushHistory();
         this.state.view = v; 
         this.state.sel = null; 
         this.state.focused = false; 
@@ -1039,14 +1678,14 @@
         if (showDropdown) {
           html += '<div class="dd" id="dropdown-ref"><div class="dd-hdr"><span>' + I.Clock + ' Recent</span><button onclick="app.clearHistory(event)">Clear All</button></div>';
           s.history.slice(0, 10).forEach(function(h, idx) {
-            html += '<div class="di" onclick="app.openFromHistory(' + idx + ')"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0"><span style="color:var(--ink-m);flex-shrink:0">' + I.Clock + '</span><span class="di-en" style="flex:1;min-width:0">' + escapeHTML(h.label) + '</span></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><span class="di-tag ' + (h.type === 'idiom' ? 'di-tag-idiom' : 'di-tag-word') + '">' + h.type + '</span><button class="di-rm" onclick="app.removeHistoryItem(event, ' + idx + ')">' + I.X + '</button></div></div>';
+            html += '<div class="di" onclick="app.openFromHistory(' + idx + ')"><div class="di-main"><span style="color:var(--ink-m);flex-shrink:0">' + I.Clock + '</span><span class="di-en">' + escapeHTML(h.label) + '</span></div><div class="di-side"><span class="di-zh">' + escapeHTML(h.sub || '') + '</span><button class="di-rm" aria-label="Remove from history" onclick="app.removeHistoryItem(event, ' + idx + ')">' + I.X + '</button></div></div>';
           });
           html += '</div>';
         } else if (showResults) {
           html += '<div class="dd" id="dropdown-ref">';
           if (s.results.length > 0) {
             s.results.forEach(function(r, idx) {
-              html += '<div class="di" onclick="app.openSearchResult(' + idx + ')"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">' + (r.type === 'idiom' ? '<span style="color:var(--gold);flex-shrink:0">' + I.Quote + '</span>' : "") + '<span class="di-en" style="flex:1;min-width:0">' + escapeHTML(r.label) + '</span></div><div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><span class="di-zh">' + escapeHTML(r.sub) + '</span><span class="di-tag ' + (r.type === 'idiom' ? 'di-tag-idiom' : 'di-tag-word') + '">' + r.type + '</span></div></div>';
+              html += '<div class="di" onclick="app.openSearchResult(' + idx + ')"><div class="di-main"><span class="di-en">' + escapeHTML(r.label) + '</span></div><div class="di-side"><span class="di-zh">' + escapeHTML(r.sub) + '</span><span class="di-tag di-tag-word">' + (r.data._type === 'en-zh' ? 'EN' : '中') + '</span></div></div>';
             });
           } else {
             // Google Translate fallback hook when no dictionary items match
@@ -1065,7 +1704,7 @@
         if (s.history.length > 0) {
           html += '<div class="hist-body">';
           s.history.forEach(function(h, idx) {
-            html += '<div class="hist-item"><div class="hist-item-info"><div class="hist-item-label">' + escapeHTML(h.label) + '</div><div class="hist-item-sub">' + escapeHTML(h.sub) + '</div></div><div style="display:flex;align-items:center;gap:6px"><span class="di-tag ' + (h.type === 'idiom' ? 'di-tag-idiom' : 'di-tag-word') + '">' + h.type + '</span><button class="di-rm" style="opacity:1" onclick="app.removeHistoryItem(event, ' + idx + ')">' + I.X + '</button></div></div>';
+            html += '<div class="hist-item"><div class="hist-item-info"><div class="hist-item-label">' + escapeHTML(h.label) + '</div><div class="hist-item-sub">' + escapeHTML(h.sub) + '</div></div><div style="display:flex;align-items:center;gap:6px"><button class="di-rm" style="opacity:1" aria-label="Remove from history" onclick="app.removeHistoryItem(event, ' + idx + ')">' + I.X + '</button></div></div>';
           });
           html += '</div>';
           html += '<div class="hist-clear" onclick="app.clearHistory(event)">' + I.Trash + ' <span style="margin-left:6px">Clear All History</span></div>';
@@ -1081,14 +1720,13 @@
         var wod = getWordOfDay();
         var isDetail = s.view === "detail" || s.view === "settings";
 
-        var html = '<div class="app" id="app-container" style="' + this.getCSSVars() + '">';
+        var html = '<div class="app" id="app-container">';
+        html += '<div id="swipe-backdrop"><div class="swipe-hint">' + I.Back + '<span>' + escapeHTML(this.getBackLabel(14)) + '</span></div></div>';
+        html += '<div id="page-content">';
         html += '<div style="position: sticky; top: 0; background: var(--paper); z-index: 100;">';
         html += '<div class="hdr">';
         if (isDetail) {
-          var prevWord = s.navStack.length > 0 ? s.navStack[s.navStack.length - 1] : null;
-          var backLabel = prevWord ? (prevWord._type === 'zh-en' ? prevWord.chinese_traditional : prevWord.english_word) : 'Home';
-          if (backLabel.length > 8) backLabel = backLabel.substring(0, 8) + '…';
-          html += '<button class="hdr-back" onclick="app.goBack()">' + I.Back + ' ' + escapeHTML(backLabel) + '</button>';
+          html += '<button class="hdr-back" onclick="app.goBack()">' + I.Back + ' ' + escapeHTML(this.getBackLabel(8)) + '</button>';
           html += '<div class="hdr-brand"><h1>Dr. 張簡</h1><span class="zh">英中</span></div>';
         } else {
           html += '<div class="brand-full"><span class="dr">Dr. 張簡</span> English-中文 Reference</div>';
@@ -1103,103 +1741,147 @@
 
         if (s.view === "home") {
           html += '<div style="padding-bottom:20px">';
-          
-          if (wod) {
-              var wodSub = wod._type === "en-zh"
-                ? (wod.phonetic_en ? wod.phonetic_en : (wod.zh_trans[0] || ""))
-                : ((wod.chinese_traditional || "") + ' · ' + pinyinTone(wod.pinyin || ""));
-              html += '<div class="wod af" onclick="app.openWordById(\'' + wod.id + '\')"><div class="wod-l">' + I.Sparkle + ' Word of the Day</div><div class="wod-w">' + wod.english_word + '</div><div class="wod-c">' + wodSub + '</div><div class="wod-d">' + (wod.definitions[0] ? wod.definitions[0].text : '') + '</div></div>';
-          }
-          
-          var zhEnEntries = DICTIONARY.filter(function(w) { return w._type === "zh-en"; });
-          var exploreEntries = zhEnEntries.length >= 10006 ? zhEnEntries.slice(10000, 10006) : DICTIONARY.slice(0, 6);
 
-          html += '<div class="qs af d2"><div class="sl">Explore</div><div class="qg">';
-          exploreEntries.forEach(function(w, i) {
-            html += '<div class="qc af d' + Math.min(i + 2, 4) + '" onclick="app.openWordById(\'' + w.id + '\')"><div class="qc-zh-title">' + (w.chinese_traditional || w.english_word) + '</div><div class="qc-py">' + pinyinTone(w.pinyin || w.phonetic_en || '') + '</div><div class="qc-en-def">' + w.english_word + '</div></div>';
-          });
-          html += '</div></div><div class="copy">© 2026 TapTiger Development LLC. All rights reserved.</div></div>';
+          if (wod) {
+            var wodSub = wod._type === "en-zh"
+              ? (wod.phonetic_en || (wod.zh_trans[0] || ""))
+              : ((wod.chinese_traditional || "") + ' · ' + pinyinTone(wod.pinyin || ""));
+            var wodZh = wod._type === "zh-en";
+            html += '<div class="wod af" role="button" tabindex="0" aria-label="Word of the day: ' + escapeHTML(wodZh ? wod.chinese_traditional : wod.english_word) + '" onclick="app.openWordById(\'' + wod.id + '\')">'
+              + '<div class="wod-l">' + I.Sparkle + ' Word of the Day</div>'
+              + '<div class="wod-w"' + (wodZh ? ' lang="zh-Hant"' : '') + '>' + escapeHTML(wodZh ? wod.chinese_traditional : wod.english_word) + '</div>'
+              + '<div class="wod-c">' + escapeHTML(wodZh ? pinyinTone(wod.pinyin || "") : wodSub) + '</div>'
+              + '<div class="wod-d">' + escapeHTML(wod.definitions[0] || '') + '</div></div>';
+          }
+
+          // Recently viewed, replacing the old "Explore" grid — which was hardcoded
+          // to DICTIONARY.slice(10000, 10006) and so showed the same six words forever.
+          var recent = this.recentWords(6);
+          if (recent.length) {
+            html += '<div class="qs af d2"><div class="sl">Recently Viewed</div><div class="qg">';
+            recent.forEach(function(w, i) {
+              var isZh = w._type === "zh-en";
+              html += '<div class="qc af d' + Math.min(i + 2, 4) + '" role="button" tabindex="0" onclick="app.openWordById(\'' + w.id + '\')">'
+                + '<div class="qc-zh-title"' + (isZh ? ' lang="zh-Hant"' : '') + '>' + escapeHTML(isZh ? w.chinese_traditional : w.english_word) + '</div>'
+                + '<div class="qc-py">' + escapeHTML(isZh ? pinyinTone(w.pinyin || "") : (w.phonetic_en || "")) + '</div>'
+                + '<div class="qc-en-def">' + escapeHTML(isZh ? w.english_word : ((w.zh_trans && w.zh_trans[0]) || "")) + '</div></div>';
+            });
+            html += '</div>';
+            html += '<button class="history-link" aria-label="View full search history" onclick="app.openHistory()">' + I.Clock + '<span>View full history</span><span class="history-link-chev">›</span></button>';
+            html += '</div>';
+          } else {
+            html += '<div class="qs af d2"><div class="es" style="padding:44px 20px"><div class="em">' + I.Book + '</div>'
+              + '<p>Words you look up will appear here.<br/>Search above to get started.</p></div></div>';
+          }
+
+          html += '<div class="copy">© 2026 TapTiger Development LLC. All rights reserved.</div></div>';
         }
 
         if (s.view === "search") {
-          html += '<div class="fl" style="padding-top:10px">';
-          html += '<div class="sl" style="padding: 0 0 16px 4px;">Search Results</div>';
-          if (s.results.length > 0) {
-            s.results.forEach(function(r, idx) {
-              html += '<div class="fi af" onclick="app.openSearchResult(' + idx + ')"><div class="fi-i"><div class="fi-en">' + escapeHTML(r.label) + '</div><div class="fi-zh">' + escapeHTML(r.sub) + '</div></div><div class="fi-a"><span class="di-tag ' + (r.type === 'idiom' ? 'di-tag-idiom' : 'di-tag-word') + '">' + r.type + '</span></div></div>';
-            });
-          } else {
-            html += '<div class="es af"><p>No dictionary results found.</p><button class="abtn" style="margin-top:16px" onclick="app.forceTranslate(\'' + safeQuote(s.query) + '\')">🌐 Translate with Google</button></div>';
-          }
-          html += '</div>';
+          html += '<div class="fl" style="padding-top:10px" id="search-results">' + this.buildSearchResultsHTML() + '</div>';
         }
 
         if (s.view === "detail" && s.sel) {
           var sel = s.sel;
           var isEnZh = sel._type === "en-zh";
           var isApiOnly = sel._type === "api-only";
-          
+          var isZhEn = !isEnZh && !isApiOnly;
+
           html += '<div class="dp">';
           html += '<div class="wcard af">';
-          
-          if (!isEnZh && !isApiOnly) {
-            // TRUE PASSED HERE: This splits the main title into individual characters
-            html += '<div class="wcard-word wcard-word-zh">' + linkify(sel.chinese_traditional, true) + '</div>';
-            if (sel.chinese_simplified && sel.chinese_simplified !== sel.chinese_traditional) {
-              // TRUE PASSED HERE
-              html += '<div class="wcard-simp">' + linkify(sel.chinese_simplified, true) + '</div>';
+
+          if (isZhEn) {
+            var hasSimp = sel.chinese_simplified && sel.chinese_simplified !== sel.chinese_traditional;
+            var showSimp = hasSimp && s.scriptPref === 'simp';
+            var headword = showSimp ? sel.chinese_simplified : sel.chinese_traditional;
+            var alt = showSimp ? sel.chinese_traditional : sel.chinese_simplified;
+
+            html += '<div class="wcard-word wcard-word-zh" lang="zh-Hant">' + linkify(headword, true) + '</div>';
+            if (hasSimp) {
+              // Per-word script toggle. Both forms are in the data; this just
+              // swaps which one is the headword and which is the footnote.
+              html += '<div class="script-row">'
+                + '<button class="script-toggle" role="switch" aria-checked="' + (showSimp ? 'true' : 'false') + '" '
+                + 'aria-label="Show ' + (showSimp ? 'traditional' : 'simplified') + ' characters" '
+                + 'onclick="event.stopPropagation();app.toggleScript()">'
+                + '<span class="' + (showSimp ? '' : 'on') + '">繁</span><span class="' + (showSimp ? 'on' : '') + '">简</span>'
+                + '</button>'
+                + '<span class="wcard-simp" lang="zh-Hant">' + linkify(alt, true) + '</span>'
+                + '</div>';
             }
-            html += '<div class="wcard-py">' + pinyinTone(sel.pinyin) + '</div>';
+            html += '<div class="wcard-py">' + escapeHTML(pinyinTone(sel.pinyin)) + '</div>';
             html += '<div class="wcard-en-sub">' + linkify(sel.english_word) + '</div>';
           } else {
-            html += '<div class="wcard-word">' + sel.english_word + '</div>';
-            if (sel.phonetic_en) html += '<div class="wcard-ph"><span class="ph">' + sel.phonetic_en + '</span></div>';
+            html += '<div class="wcard-word">' + escapeHTML(sel.english_word) + '</div>';
+            if (sel.phonetic_en) html += '<div class="wcard-ph"><span class="ph">' + escapeHTML(sel.phonetic_en) + '</span></div>';
+            if (sel.tags || sel.collins) {
+              html += '<div class="level-tags">';
+              if (sel.collins) html += '<span class="level-tag lt-collins" title="Collins frequency band">' + '★'.repeat(sel.collins) + '</span>';
+              String(sel.tags || '').split(/\s+/).filter(Boolean).forEach(function(tg) {
+                html += '<span class="level-tag">' + escapeHTML(EXAM_TAGS[tg] || tg) + '</span>';
+              });
+              html += '</div>';
+            }
           }
 
           html += '<div class="wcard-actions">';
-          if (!isEnZh && !isApiOnly && sel.chinese_traditional) {
-            html += '<button class="abtn" onclick="app.speak(\'' + safeQuote(sel.chinese_traditional) + '\', \'zh\', this)">' + I.Speaker + ' 中文</button>';
+          if (isZhEn && sel.chinese_traditional) {
+            html += '<button class="abtn" aria-label="Pronounce in Chinese" onclick="app.speak(\'' + safeQuote(sel.chinese_traditional) + '\', \'zh\', this)">' + I.Speaker + ' 中文</button>';
           }
-          html += '<button class="abtn" onclick="app.speak(\'' + safeQuote(sel.english_word) + '\', \'en\', this)">' + I.Speaker + ' English</button>';
-          html += '<button class="abtn" onclick="app.copyWord(\'' + sel.id + '\')">' + I.Copy + '</button>';
-          html += '<button id="star-btn-' + sel.id + '" class="abtn ' + (this.isFav(sel.id) ? 'on' : '') + '" onclick="app.toggleFav(\'' + sel.id + '\')">' + I.Star(this.isFav(sel.id)) + '</button>';
-          var googleTerm = encodeURIComponent((!isEnZh && !isApiOnly) ? (sel.chinese_traditional + ' ' + sel.english_word) : (sel.english_word + ' definition'));
-          html += '<a class="abtn" href="https://www.google.com/search?q=' + googleTerm + '" target="_blank" rel="noopener">' + I.ExtLink + ' Google</a>';
+          html += '<button class="abtn" aria-label="Pronounce in English" onclick="app.speak(\'' + safeQuote(sel.english_word) + '\', \'en\', this)">' + I.Speaker + ' English</button>';
+          html += '<button class="abtn" aria-label="Share this word" onclick="app.shareWord(\'' + sel.id + '\')">' + I.Share + '</button>';
+          html += '<button class="abtn" aria-label="Copy this word" onclick="app.copyWord(\'' + sel.id + '\')">' + I.Copy + '</button>';
+          var fav = this.isFav(sel.id);
+          html += '<button id="star-btn-' + sel.id + '" class="abtn ' + (fav ? 'on' : '') + '" role="button" aria-pressed="' + (fav ? 'true' : 'false') + '" aria-label="' + (fav ? 'Remove from favorites' : 'Save to favorites') + '" onclick="app.toggleFav(\'' + sel.id + '\')">' + I.Star(fav) + '</button>';
+          var googleTerm = encodeURIComponent(isZhEn ? (sel.chinese_traditional + ' ' + sel.english_word) : (sel.english_word + ' definition'));
+          html += '<a class="abtn" href="https://www.google.com/search?q=' + googleTerm + '" target="_blank" rel="noopener noreferrer">' + I.ExtLink + ' Google</a>';
           html += '</div>';
           html += '</div>';
+
+          // ── Character breakdown ──────────────────────────────────────────
+          // Multi-character words get each component character shown with its own
+          // reading and gloss, so a compound can be understood from its parts.
+          if (isZhEn) {
+            var decomp = this.decompose(sel);
+            if (decomp.length > 1) {
+              html += '<div class="ds af d1"><div class="dst">字 Character Breakdown</div><div class="decomp">';
+              decomp.forEach(function(d) {
+                html += '<div class="decomp-item"' + (d.entry ? ' role="button" tabindex="0" onclick="app.openWordById(\'' + d.entry.id + '\')"' : '') + '>'
+                  + '<div class="decomp-char" lang="zh-Hant">' + escapeHTML(d.char) + '</div>'
+                  + '<div class="decomp-py">' + escapeHTML(d.pinyin) + '</div>'
+                  + '<div class="decomp-gloss">' + escapeHTML(d.gloss) + '</div></div>';
+              });
+              html += '</div></div>';
+            }
+          }
 
           if (isApiOnly) {
             html += '<div id="zhtrans-container">' + this.buildZhTransHTML() + '</div>';
-
             if (sel.related_words && sel.related_words.length > 0) {
               html += '<div class="ds af d2"><div class="dst">Related Local Entries</div>';
               sel.related_words.forEach(function(r) {
-                html += '<div class="fi" onclick="app.openWordById(\'' + r.data.id + '\')"><div class="fi-i"><div class="fi-en">' + escapeHTML(r.label) + '</div><div class="fi-zh">' + escapeHTML(r.sub) + '</div></div></div>';
+                html += '<div class="fi" role="button" tabindex="0" onclick="app.openWordById(\'' + r.data.id + '\')"><div class="fi-i"><div class="fi-en">' + escapeHTML(r.label) + '</div><div class="fi-zh">' + escapeHTML(r.sub) + '</div></div></div>';
               });
               html += '</div>';
             }
           } else if (isEnZh) {
-            html += '<div class="dtab-bar af d1">';
-            html += '<button id="dtab-cn" class="dtab' + (s.detailTab === 'cn' ? ' dtab-on' : '') + '" onclick="app.setDetailTab(\'cn\')">英漢 EN-CN</button>';
-            html += '<button id="dtab-en" class="dtab' + (s.detailTab === 'en' ? ' dtab-on' : '') + '" onclick="app.setDetailTab(\'en\')">英英 EN-EN</button>';
+            html += '<div class="dtab-bar af d1" role="tablist">';
+            html += '<button id="dtab-cn" role="tab" aria-selected="' + (s.detailTab === 'cn') + '" class="dtab' + (s.detailTab === 'cn' ? ' dtab-on' : '') + '" onclick="app.setDetailTab(\'cn\')">英漢 EN-CN</button>';
+            html += '<button id="dtab-en" role="tab" aria-selected="' + (s.detailTab === 'en') + '" class="dtab' + (s.detailTab === 'en' ? ' dtab-on' : '') + '" onclick="app.setDetailTab(\'en\')">英英 EN-EN</button>';
             html += '</div>';
 
-            html += '<div id="dtab-cn-panel" style="display:' + (s.detailTab === 'cn' ? 'block' : 'none') + '">';
+            html += '<div id="dtab-cn-panel" role="tabpanel" style="display:' + (s.detailTab === 'cn' ? 'block' : 'none') + '">';
             if (sel.zh_trans && sel.zh_trans.length > 0) {
               var posGroups = this.parsePosGroups(sel.zh_trans);
               html += '<div class="ds af d2">';
               posGroups.forEach(function(group) {
                 html += '<div class="pos-group">';
-                if (group.pos) {
-                  html += '<div class="pos-label">' + escapeHTML(group.pos) + '</div>';
-                }
+                if (group.pos) html += '<div class="pos-label">' + escapeHTML(group.pos) + '</div>';
                 html += '<div class="pos-defs">';
                 group.defs.forEach(function(def, di) {
                   html += '<div class="pos-def-item">';
-                  if (group.defs.length > 1) {
-                    html += '<span class="pos-def-num">' + (di + 1) + '</span>';
-                  }
-                  html += '<span class="pos-def-text">' + linkify(def) + '</span>';
+                  if (group.defs.length > 1) html += '<span class="pos-def-num">' + (di + 1) + '</span>';
+                  html += '<span class="pos-def-text" lang="zh-Hans">' + linkify(def) + '</span>';
                   html += spkBtn(def, 'zh');
                   html += '</div>';
                 });
@@ -1209,77 +1891,59 @@
             }
 
             if (sel.exchange) {
-              var exchangeParts = sel.exchange.split('/').filter(function(p) { return p.trim(); });
+              var exchangeParts = String(sel.exchange).split('/').filter(function(p) { return p.trim(); });
               if (exchangeParts.length > 0) {
-                var labels = { p: "Past tense", d: "Past participle", i: "Present participle", '3': "3rd person singular", r: "Comparative", t: "Superlative", s: "Plural", '0': "Base form", '1': "Related" };
                 html += '<div class="ds"><div class="dst">變化 Word Forms</div><div class="exchange-info">';
                 exchangeParts.forEach(function(part) {
                   var type = part.charAt(0);
                   var form = part.substring(2);
-                  var label = labels[type] || type;
-                  html += '<div><strong>' + label + ':</strong> ' + escapeHTML(form) + '</div>';
+                  if (!form) return;
+                  html += '<div><strong>' + escapeHTML(EXCHANGE_LABELS[type] || type) + ':</strong> '
+                    + '<span class="wlink wlink-en" role="button" tabindex="0" onclick="app.lookupWord(\'' + safeQuote(form) + '\')">' + escapeHTML(form) + '</span></div>';
                 });
                 html += '</div></div>';
               }
             }
-            html += '</div>'; 
+            html += '</div>';
 
-            html += '<div id="dtab-en-panel" style="display:' + (s.detailTab === 'en' ? 'block' : 'none') + '">';
-            if (sel.definitions && sel.definitions.length > 0 && sel.definitions[0].text) {
+            html += '<div id="dtab-en-panel" role="tabpanel" style="display:' + (s.detailTab === 'en' ? 'block' : 'none') + '">';
+            if (sel.definitions && sel.definitions.length > 0 && sel.definitions[0]) {
               html += '<div class="ds"><div class="dst">English Definition</div>';
-              html += '<div class="dfi"><div class="dfi-row"><span class="dn">1</span><div class="dfi-text-wrap"><span class="dtx">' + linkify(sel.definitions[0].text) + '</span></div><span class="dfi-spk">' + spkBtn(sel.definitions[0].text, 'en') + '</span></div></div>';
+              sel.definitions.forEach(function(d, i) {
+                html += '<div class="dfi"><div class="dfi-row"><span class="dn">' + (i + 1) + '</span><div class="dfi-text-wrap"><span class="dtx">' + linkify(d) + '</span></div><span class="dfi-spk">' + spkBtn(d, 'en') + '</span></div></div>';
+              });
               html += '</div>';
             } else {
               html += '<div style="padding:24px;text-align:center;color:var(--ink-m);font-size:var(--fs)">No English-only definition available for this entry.</div>';
             }
-            html += '</div>'; 
+            html += '</div>';
 
           } else {
             if (sel.definitions && sel.definitions.length > 0) {
               html += '<div class="ds af d2"><div class="dst">Definitions</div>';
               sel.definitions.forEach(function(d, i) {
-                html += '<div class="dfi"><div class="dfi-row"><span class="dn">' + (i + 1) + '</span><div class="dfi-text-wrap">' + (d.pos ? '<span class="dpos">' + d.pos + '</span>' : '') + '<span class="dtx">' + linkify(d.text) + '</span></div><span class="dfi-spk">' + spkBtn(d.text, 'auto') + '</span></div>';
-                if (d.example_en) {
-                  html += '<div class="dex"><div class="dex-line"><span class="dex-line-text dex-en">"' + escapeHTML(d.example_en) + '"</span>' + spkBtn(d.example_en, 'en') + '</div>';
-                  if (d.example_zh) {
-                    html += '<div class="dex-line"><span class="dex-line-text dex-zh">' + linkify(d.example_zh) + '</span>' + spkBtn(d.example_zh, 'zh') + '</div>';
-                  }
-                  html += '</div>';
-                }
-                html += '</div>';
+                html += '<div class="dfi"><div class="dfi-row"><span class="dn">' + (i + 1) + '</span><div class="dfi-text-wrap"><span class="dtx">' + linkify(d) + '</span></div><span class="dfi-spk">' + spkBtn(d, 'auto') + '</span></div></div>';
               });
               html += '</div>';
             }
           }
 
           html += '<div id="endict-container">' + this.buildEnDictHTML() + '</div>';
-
-          if (sel.synonyms && sel.synonyms.length > 0) {
-            html += '<div class="ds af d3"><div class="dst">辨析 Synonyms</div><div class="tg">' + sel.synonyms.map(function(sy) { return '<span class="tag ts" onclick="app.tagClick(\'' + escapeHTML(sy) + '\')">' + sy + '</span>'; }).join('') + '</div>';
-            if (sel.antonyms && sel.antonyms.length > 0) {
-              html += '<div class="dst" style="margin-top:16px">Antonyms</div><div class="tg">' + sel.antonyms.map(function(a) { return '<span class="tag ta" onclick="app.tagClick(\'' + escapeHTML(a) + '\')">' + a + '</span>'; }).join('') + '</div>';
-            }
-            html += '</div>';
-          }
-
-          if (sel.idioms && sel.idioms.length > 0) {
-            html += '<div class="ds af d4"><div class="dst">' + I.Book + ' Idioms & Sayings</div>';
-            sel.idioms.forEach(function(idm, i) {
-              html += '<div class="ic" onclick="app.openFromIdiomIndex(\'' + sel.id + '\', ' + i + ')"><div class="ic-line"><span class="ic-line-text ic-zh">' + linkify(idm.zh) + '</span>' + spkBtn(idm.zh, 'zh') + '</div><div class="ic-line"><span class="ic-line-text ic-en">"' + linkify(idm.en) + '"</span>' + spkBtn(idm.en, 'en') + '</div><div class="ic-py">' + pinyinTone(idm.pinyin) + '</div></div>';
-            });
-            html += '</div>';
-          }
           html += '</div>';
         }
 
         if (s.view === "favorites") {
-          html += '<div><div style="padding:20px 20px 0"><h2 style="font-family:var(--font-serif);font-size:calc(28px * var(--sc));font-weight:700;letter-spacing:-.5px;color:var(--ink)">Favorites</h2><p style="font-size:var(--fs);color:var(--ink-m);margin-top:4px">' + s.favs.length + ' saved ' + (s.favs.length === 1 ? 'word' : 'words') + '</p></div><div class="fl">';
-          if (s.favs.length === 0) {
-            html += '<div class="es af"><div class="em">☆</div><p>No favorites yet.<br/>Tap the star on any word to save it here.</p></div>';
+          var self = this;
+          var favWords = s.favs.map(function(f) { return self.resolveFav(f); }).filter(Boolean);
+          html += '<div><div style="padding:20px 20px 0"><h2 style="font-family:var(--font-serif);font-size:calc(28px * var(--sc));font-weight:700;letter-spacing:-.5px;color:var(--ink)">Favorites</h2><p style="font-size:var(--fs);color:var(--ink-m);margin-top:4px">' + favWords.length + ' saved ' + (favWords.length === 1 ? 'word' : 'words') + '</p></div><div class="fl">';
+          if (favWords.length === 0) {
+            html += '<div class="es af"><div class="em">\u2606</div><p>No favorites yet.<br/>Tap the star on any word to save it here.</p></div>';
           } else {
-            s.favs.forEach(function(w) {
-              var subLine = (w._type === "en-zh" || w._type === "api-only") ? (w.phonetic_en || (w.zh_trans && w.zh_trans[0]) || "") : ((w.chinese_traditional || "") + ' · ' + pinyinTone(w.pinyin || ""));
-              html += '<div class="fi af" onclick="app.openWordById(\'' + w.id + '\')"><div class="fi-i"><div class="fi-en">' + w.english_word + '</div><div class="fi-zh">' + subLine + '</div></div><div class="fi-a" onclick="event.stopPropagation()"><button class="fab" onclick="app.speak(\'' + safeQuote(w.english_word) + '\',\'en\', this)">' + I.Speaker + '</button><button class="fab dng" onclick="app.toggleFav(\'' + w.id + '\')">' + I.Trash + '</button></div></div>';
+            favWords.forEach(function(w) {
+              var subLine = (w._type === "en-zh" || w._type === "api-only")
+                ? (w.phonetic_en || (w.zh_trans && w.zh_trans[0]) || "")
+                : ((w.chinese_traditional || "") + ' \u00b7 ' + pinyinTone(w.pinyin || ""));
+              html += '<div class="fi af" role="button" tabindex="0" onclick="app.openWordById(\'' + w.id + '\')"><div class="fi-i"><div class="fi-en">' + escapeHTML(w.english_word) + '</div><div class="fi-zh">' + escapeHTML(subLine) + '</div></div><div class="fi-a" onclick="event.stopPropagation()"><button class="fab" aria-label="Pronounce ' + escapeHTML(w.english_word) + '" onclick="app.speak(\'' + safeQuote(w.english_word) + '\',\'en\', this)">' + I.Speaker + '</button><button class="fab dng" aria-label="Remove ' + escapeHTML(w.english_word) + ' from favorites" onclick="app.toggleFav(\'' + w.id + '\')">' + I.Trash + '</button></div></div>';
             });
           }
           html += '</div></div>';
@@ -1294,18 +1958,21 @@
 
           html += '<div class="fs-section"><div class="sett-label">Font Size</div><div class="fs-bar">';
           FONT_SIZES.forEach(function(fs) {
-            html += '<button id="fs-btn-' + fs.value + '" class="fs-btn ' + (s.fontSize === fs.value ? 'sel' : '') + '" onclick="app.setFontSize(' + fs.value + ')" style="font-size:' + fs.value + 'px">' + fs.label + '</button>';
+            var preview = 11 + (fs.value - MIN_FONT) * 0.42;
+            html += '<button id="fs-btn-' + fs.value + '" class="fs-btn ' + (s.fontSize === fs.value ? 'sel' : '') + '" aria-pressed="' + (s.fontSize === fs.value) + '" aria-label="Text size ' + escapeHTML(fs.label) + '" onclick="app.setFontSize(' + fs.value + ')" style="font-size:' + preview.toFixed(1) + 'px">' + escapeHTML(fs.label) + '</button>';
           });
           html += '</div><div class="fs-preview"><div class="fs-preview-en">perseverance</div><div class="fs-preview-zh">毅力 · yì lì</div></div></div>';
 
-          html += '<div class="hist-section"><div class="sett-label">Search History</div><div class="hist-card"><div class="hist-header" onclick="app.toggleHistorySettings()"><div class="hist-header-left"><span class="icon">' + I.Clock + '</span><div class="info"><h4>View History</h4><p>' + s.history.length + ' ' + (s.history.length === 1 ? 'search' : 'searches') + ' saved</p></div></div><span id="hist-chevron" class="hist-chevron ' + (s.showHistorySettings ? 'open' : '') + '">▾</span></div><div id="hist-body-wrap">' + this.buildHistorySettingsHTML() + '</div></div></div>';
+          html += '<div class="hist-section" id="hist-section"><div class="sett-label">Search History</div><div class="hist-card"><div class="hist-header" onclick="app.toggleHistorySettings()"><div class="hist-header-left"><span class="icon">' + I.Clock + '</span><div class="info"><h4>View History</h4><p>' + s.history.length + ' ' + (s.history.length === 1 ? 'search' : 'searches') + ' saved</p></div></div><span id="hist-chevron" class="hist-chevron ' + (s.showHistorySettings ? 'open' : '') + '">▾</span></div><div id="hist-body-wrap">' + this.buildHistorySettingsHTML() + '</div></div></div>';
 
-          html += '<div class="about-section"><h3>About</h3><p>Dr. 張簡 English-中文 Reference is a premium, offline-first dictionary using the CC-CEDICT and ECDICT databases.</p><p style="margin-top:12px;font-size:12px;color:var(--ink-m)">Version 2.0.0<br/>© 2026 TapTiger Development LLC. All rights reserved.</p></div></div>';
+          html += '<div class="about-section"><h3>About</h3><p>Dr. 張簡 English-中文 Reference is an offline-first dictionary combining <strong>CC-CEDICT</strong> (中→英) and <strong>ECDICT</strong> (英→中). Search by English, Chinese, or pinyin — with or without tone numbers.</p>' + '<p style="margin-top:10px">' + DICTIONARY.length.toLocaleString() + ' entries available offline.</p>' + '<p style="margin-top:12px;font-size:calc(12px * var(--sc));color:var(--ink-m)">Version 3.0.0<br/>© 2026 TapTiger Development LLC. All rights reserved.</p></div></div>';
         }
 
-        html += '<div class="tb"><button class="tbn ' + (s.view === 'home' || s.view === 'search' ? 'on' : '') + '" onclick="app.setView(\'home\')">' + I.Home + '<span>Home</span></button><button class="tbn ' + (s.view === 'favorites' ? 'on' : '') + '" onclick="app.setView(\'favorites\')">' + I.Heart + '<span>Favorites</span></button><button class="tbn ' + (s.view === 'settings' ? 'on' : '') + '" onclick="app.setView(\'settings\')">' + I.Gear + '<span>Settings</span></button></div>';
+        html += '</div>'; // #page-content — tab bar and toast stay outside so they don't slide
 
-        html += '<div id="toast-container">';
+        html += '<nav class="tb" aria-label="Main"><button class="tbn ' + (s.view === 'home' || s.view === 'search' ? 'on' : '') + '" aria-label="Home" aria-current="' + (s.view === 'home' || s.view === 'search' ? 'page' : 'false') + '" onclick="app.setView(\'home\')">' + I.Home + '<span>Home</span></button><button class="tbn ' + (s.view === 'favorites' ? 'on' : '') + '" aria-label="Favorites" aria-current="' + (s.view === 'favorites' ? 'page' : 'false') + '" onclick="app.setView(\'favorites\')">' + I.Heart + '<span>Favorites</span></button><button class="tbn ' + (s.view === 'settings' ? 'on' : '') + '" aria-label="Settings" aria-current="' + (s.view === 'settings' ? 'page' : 'false') + '" onclick="app.setView(\'settings\')">' + I.Gear + '<span>Settings</span></button></nav>';
+
+        html += '<div id="toast-container" role="status" aria-live="polite">';
         if (s.toast) html += '<div class="toast">' + escapeHTML(s.toast) + '</div>';
         html += '</div></div>';
         return html;
