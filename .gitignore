@@ -1,0 +1,10 @@
+# Build inputs for combine_dicts.py — 76MB of source data that GitHub Pages
+# would otherwise serve alongside the app. Download them into the repo root to
+# rebuild dictionary.jsonl:
+#   cedict_ts.u8  https://www.mdbg.net/chinese/dictionary?page=cc-cedict
+#   ecdict.csv    https://github.com/skywind3000/ECDICT
+cedict_ts.u8
+ecdict.csv
+
+.DS_Store
+*.swp
