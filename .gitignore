@@ -8,3 +8,6 @@ ecdict.csv
 
 .DS_Store
 *.swp
+
+# Local agent/editor state — never part of the deployed site
+.claude/
