@@ -307,15 +307,6 @@ a.abtn { text-decoration: none; }
 .script-toggle span.on { background: var(--accent); color: #fff; }
 .wcard-simp { margin-top: 0 !important; }
 
-/* ─── Exam level tags ──────────────────────────────────────────────────── */
-.level-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.level-tag {
-  font-family: var(--font-sans); font-size: calc(11px * var(--sc)); font-weight: 600;
-  padding: 3px 9px; border-radius: 5px;
-  background: var(--ag); color: var(--accent); letter-spacing: .3px;
-}
-.level-tag.lt-collins { background: var(--gs); color: var(--gold); letter-spacing: -1px; }
-
 /* ─── Character breakdown ──────────────────────────────────────────────── */
 .decomp { display: flex; flex-wrap: wrap; gap: 10px; }
 .decomp-item {

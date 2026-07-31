@@ -80,8 +80,6 @@
       '3': "3rd person singular", r: "Comparative", t: "Superlative", s: "Plural",
       '0': "Base form", '1': "Related forms" };
 
-    const EXAM_TAGS = { zk: "中考", gk: "高考", cet4: "CET-4", cet6: "CET-6",
-      ky: "考研", toefl: "TOEFL", gre: "GRE", ielts: "IELTS" };
 
     // ─── Icons ─────────────────────────────────────────────────────────────
     const I = {
@@ -433,9 +431,7 @@
                     definitions: defs,
                     zh_trans: [],
                     exchange: "",
-                    freq: e.f || 0,
-                    tags: "",
-                    collins: 0
+                    freq: e.f || 0
                   };
                   const pyPlain = norm((e.p || "").replace(/\d/g, ""));
                   w._enLow = norm(w.english_word);
@@ -462,9 +458,7 @@
                     definitions: defs,
                     zh_trans: zh,
                     exchange: e.x || "",
-                    freq: e.f || 0,
-                    tags: e.g || "",
-                    collins: e.c || 0
+                    freq: e.f || 0
                   };
                   w._enLow = norm(e.w);
                   w._pyNorm = "";
@@ -1142,7 +1136,7 @@
         return {
           id: 'api_' + word, _type: "api-only", english_word: word,
           chinese_traditional: "", chinese_simplified: "", pinyin: "", phonetic_en: "",
-          definitions: [], zh_trans: [], exchange: "", freq: 0, tags: "", collins: 0,
+          definitions: [], zh_trans: [], exchange: "", freq: 0,
           related_words: searchDB(word).slice(0, 5)
         };
       },
@@ -1814,14 +1808,6 @@
           } else {
             html += '<div class="wcard-word">' + escapeHTML(sel.english_word) + '</div>';
             if (sel.phonetic_en) html += '<div class="wcard-ph"><span class="ph">' + escapeHTML(sel.phonetic_en) + '</span></div>';
-            if (sel.tags || sel.collins) {
-              html += '<div class="level-tags">';
-              if (sel.collins) html += '<span class="level-tag lt-collins" title="Collins frequency band">' + '★'.repeat(sel.collins) + '</span>';
-              String(sel.tags || '').split(/\s+/).filter(Boolean).forEach(function(tg) {
-                html += '<span class="level-tag">' + escapeHTML(EXAM_TAGS[tg] || tg) + '</span>';
-              });
-              html += '</div>';
-            }
           }
 
           html += '<div class="wcard-actions">';
