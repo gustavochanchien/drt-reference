@@ -1,0 +1,27 @@
+{
+  "name": "Dr. 張簡 English-中文 Reference",
+  "short_name": "Dr. 張簡",
+  "description": "Offline English–Chinese dictionary built on CC-CEDICT and ECDICT, with pinyin search, character breakdown, and pronunciation.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf8f5",
+  "theme_color": "#faf8f5",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "books", "reference"],
+  "icons": [
+    {
+      "src": "apple-touch-icon.jpg",
+      "sizes": "180x180",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
